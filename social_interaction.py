@@ -3,42 +3,44 @@ import math
 import os
 from tkinter import filedialog
 import pandas as pd
+from ast import literal_eval
 
 
-def social_interaction():
+def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclosure_inputs, time_inputs, video_inputs,
+                       exp_inputs):
     # inches-pixel conversion
-    enclosure_pixel_length = 77
-    enclosure_cm_length = 10.16
+    enclosure_pixel_length = int(enclosure_conversion[0].get())
+    enclosure_cm_length = float(enclosure_conversion[1].get())
     pixel_per_cm = enclosure_pixel_length / enclosure_cm_length
-    mouse_interaction_dist_cm = 2
+    mouse_interaction_dist_cm = float(enclosure_conversion[2].get())
     distance_in_pixels = pixel_per_cm * mouse_interaction_dist_cm
 
     # enclosure corner pixel location
     # left enclosure
-    left_enclosure_top_left = (120, 236)
-    left_enclosure_top_right = (172, 236)
-    left_enclosure_bottom_left = (120, left_enclosure_top_right[1] + enclosure_pixel_length)
-    left_enclosure_bottom_right = (172, left_enclosure_top_right[1] + enclosure_pixel_length)
+    left_enclosure_top_left = literal_eval(left_enclosure_inputs[0].get())
+    left_enclosure_top_right = literal_eval(left_enclosure_inputs[1].get())
+    left_enclosure_bottom_left = literal_eval(left_enclosure_inputs[2].get())
+    left_enclosure_bottom_right = literal_eval(left_enclosure_inputs[3].get())
     left_enclosure = [left_enclosure_top_left, left_enclosure_top_right, left_enclosure_bottom_left,
                       left_enclosure_bottom_right]
 
     # right enclosure
-    right_enclosure_top_left = (627, 219)
-    right_enclosure_top_right = (682, 219)
-    right_enclosure_bottom_left = (627, right_enclosure_top_left[1] + enclosure_pixel_length)
-    right_enclosure_bottom_right = (682, right_enclosure_top_left[1] + enclosure_pixel_length)
+    right_enclosure_top_left = literal_eval(right_enclosure_inputs[0].get())
+    right_enclosure_top_right = literal_eval(right_enclosure_inputs[1].get())
+    right_enclosure_bottom_left = literal_eval(right_enclosure_inputs[2].get())
+    right_enclosure_bottom_right = literal_eval(right_enclosure_inputs[3].get())
     right_enclosure = [right_enclosure_top_left, right_enclosure_top_right, right_enclosure_bottom_left,
                        right_enclosure_bottom_right]
 
     # time criteria
-    time_criteria_ms = 500
+    time_criteria_ms = int(time_inputs.get())
     time_criteria_s = time_criteria_ms / 1000
 
     # video information
-    video_fps = 25
+    video_fps = int(video_inputs.get())
 
     # experiment criteria
-    trial_runtime_s = 150
+    trial_runtime_s = int(exp_inputs.get())
     # round down for the sake of simplicity because fractional frames aren't possible
     required_frames_for_sniffle = math.floor(video_fps * time_criteria_s)
 
@@ -212,4 +214,96 @@ def social_interaction():
     sniffle_df.to_csv(save_file_path)
 
 
-social_interaction()
+def make_social_interaction_buttons(tk, root):
+    si_enclosure_pixel_label = tk.Label(root, text='Enter enclosure length in pixels:')
+    si_enclosure_pixel_label.grid(row=0, column=0)
+    si_enclosure_pixel_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_pixel_entry.grid(row=0, column=1)
+
+    si_enclosure_cm_label = tk.Label(root, text='Enter enclosure length in cm:')
+    si_enclosure_cm_label.grid(row=1, column=0)
+    si_enclosure_cm_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_cm_entry.grid(row=1, column=1)
+
+    si_interaction_dist_label = tk.Label(root, text='Enter interaction distance in cm:')
+    si_interaction_dist_label.grid(row=2, column=0)
+    si_interaction_dist_entry = tk.Entry(root, width=30, justify='center')
+    si_interaction_dist_entry.grid(row=2, column=1)
+
+    spacer_btn = tk.Label(root, text='')
+    spacer_btn.grid(row=3, column=0)
+
+    conversion_details = [si_enclosure_pixel_entry, si_enclosure_cm_entry, si_interaction_dist_entry]
+
+    si_enclosure_left_tl_label = tk.Label(root, text='Enter left-enclosure top-left coordinates as (x,y):')
+    si_enclosure_left_tl_label.grid(row=4, column=0)
+    si_enclosure_left_tl_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_left_tl_entry.grid(row=4, column=1)
+
+    si_enclosure_left_tr_label = tk.Label(root, text='Enter left-enclosure top-right coordinates as (x,y):')
+    si_enclosure_left_tr_label.grid(row=5, column=0)
+    si_enclosure_left_tr_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_left_tr_entry.grid(row=5, column=1)
+
+    si_enclosure_left_bl_label = tk.Label(root, text='Enter left-enclosure bottom-left coordinates as (x,y):')
+    si_enclosure_left_bl_label.grid(row=6, column=0)
+    si_enclosure_left_bl_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_left_bl_entry.grid(row=6, column=1)
+
+    si_enclosure_left_br_label = tk.Label(root, text='Enter left-enclosure bottom-right coordinates as (x,y):')
+    si_enclosure_left_br_label.grid(row=7, column=0)
+    si_enclosure_left_br_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_left_br_entry.grid(row=7, column=1)
+
+    spacer_btn_2 = tk.Label(root, text='')
+    spacer_btn_2.grid(row=8, column=0)
+
+    left_enclosure_details = [si_enclosure_left_tl_entry, si_enclosure_left_tr_entry, si_enclosure_left_bl_entry,
+                              si_enclosure_left_br_entry]
+
+    si_enclosure_right_tl_label = tk.Label(root, text='Enter right-enclosure top-left coordinates as (x,y):')
+    si_enclosure_right_tl_label.grid(row=9, column=0)
+    si_enclosure_right_tl_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_right_tl_entry.grid(row=9, column=1)
+
+    si_enclosure_right_tr_label = tk.Label(root, text='Enter right-enclosure top-right coordinates as (x,y):')
+    si_enclosure_right_tr_label.grid(row=10, column=0)
+    si_enclosure_right_tr_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_right_tr_entry.grid(row=10, column=1)
+
+    si_enclosure_right_bl_label = tk.Label(root, text='Enter right-enclosure bottom-left coordinates as (x,y):')
+    si_enclosure_right_bl_label.grid(row=11, column=0)
+    si_enclosure_right_bl_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_right_bl_entry.grid(row=11, column=1)
+
+    si_enclosure_right_br_label = tk.Label(root, text='Enter right-enclosure bottom-right coordinates as (x,y):')
+    si_enclosure_right_br_label.grid(row=12, column=0)
+    si_enclosure_right_br_entry = tk.Entry(root, width=30, justify='center')
+    si_enclosure_right_br_entry.grid(row=12, column=1)
+
+    spacer_btn_3 = tk.Label(root, text='')
+    spacer_btn_3.grid(row=13, column=0)
+
+    right_enclosure_details = [si_enclosure_right_tl_entry, si_enclosure_right_tr_entry, si_enclosure_right_bl_entry,
+                               si_enclosure_right_br_entry]
+
+    si_interaction_time_label = tk.Label(root, text='Enter the interaction time in ms:')
+    si_interaction_time_label.grid(row=14, column=0)
+    si_interaction_time_entry = tk.Entry(root, width=30, justify='center')
+    si_interaction_time_entry.grid(row=14, column=1)
+
+    si_video_fps_label = tk.Label(root, text='Enter the video fps:')
+    si_video_fps_label.grid(row=15, column=0)
+    si_video_fps_entry = tk.Entry(root, width=30, justify='center')
+    si_video_fps_entry.grid(row=15, column=1)
+
+    si_exp_time_label = tk.Label(root, text='Enter the experiment trial time in seconds:')
+    si_exp_time_label.grid(row=16, column=0)
+    si_exp_time_entry = tk.Entry(root, width=30, justify='center')
+    si_exp_time_entry.grid(row=16, column=1)
+
+    si_csv_btn = tk.Button(root, text='Make SI CSV',
+                           command=lambda: social_interaction(conversion_details, left_enclosure_details,
+                                                              right_enclosure_details, si_interaction_time_entry,
+                                                              si_video_fps_entry, si_exp_time_entry))
+    si_csv_btn.grid(row=18, column=0, columnspan=2)

@@ -5,15 +5,15 @@ import tkinter.filedialog as filedialog
 import pandas as pd
 
 
-def accuracy():
+def accuracy(p_value_input, beginning_frames_dropped_input):
     file_path = filedialog.askdirectory()
     pattern = os.path.join(file_path, '*.csv')
     files = glob.glob(pattern)
 
     # dlc model settings
-    p_value = 0.8
-    beginning_frames_dropped_left = 181
-    beginning_frames_dropped_right = 247
+    p_value = float(p_value_input.get())
+    beginning_frames_dropped_left = int(beginning_frames_dropped_input.get())
+    beginning_frames_dropped_right = int(beginning_frames_dropped_input.get())
 
     # calculate dropped frames / model accuracy
     percent_dropped = dict()
@@ -58,3 +58,19 @@ def accuracy():
     save_file_path = filedialog.asksaveasfilename(defaultextension='.csv', title='Save the file')
     accuracy_df.to_csv(save_file_path)
 
+
+def make_accuracy_buttons(tk, root):
+    accuracy_p_value_label = tk.Label(root, text='Enter the p-value as a decimal:')
+    accuracy_p_value_label.grid(row=0, column=0)
+    accuracy_p_value_entry = tk.Entry(root, width=30, justify='center')
+    accuracy_p_value_entry.grid(row=0, column=1)
+
+    accuracy_dropped_frames_label = tk.Label(root, text='Enter the initial frames to drop as a number:')
+    accuracy_dropped_frames_label.grid(row=1, column=0)
+    accuracy_dropped_frames_entry = tk.Entry(root, width=30, justify='center')
+    accuracy_dropped_frames_entry.grid(row=1, column=1)
+
+    accuracy_csv_btn = tk.Button(root, text='Make Dropped Frames / Accuracy CSV',
+                                 command=lambda: accuracy(accuracy_p_value_entry, accuracy_dropped_frames_entry),
+                                 width=30)
+    accuracy_csv_btn.grid(row=2, column=0, columnspan=2)

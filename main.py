@@ -1,7 +1,8 @@
 import tkinter as tk
 import webbrowser
-
 import pandas as pd
+from accuracy import make_accuracy_buttons
+from social_interaction import make_social_interaction_buttons
 
 pd.set_option("display.max_rows", None, "display.max_columns", None)
 
@@ -44,10 +45,13 @@ def main_menu_buttons(tk, frame):
     main_menu_btn = tk.Button(frame, text='Main Menu', command=lambda: display_frame(main_page_frame), width=30)
     spacer_btn = tk.Label(frame, text='')
     spacer_btn.grid(row=15, column=0)
-    main_menu_btn.grid()
+    main_menu_btn.grid(columnspan=2)
 
 
+make_accuracy_buttons(tk, accuracy_frame)
 main_menu_buttons(tk, accuracy_frame)
+
+make_social_interaction_buttons(tk, social_interaction_frame)
 main_menu_buttons(tk, social_interaction_frame)
 
 display_frame(main_page_frame)
