@@ -144,11 +144,11 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
             if not math.isnan(right_missed_mouse_nose_coord[0]) and not math.isnan(right_missed_mouse_nose_coord[1]):
                 right_missed_total_frames += 1
             # check if the mouse at most criteria distance away in pixels using euclidean distance
-            if math.dist(right_missed_mouse_nose_coord, left_enclosure_top_left) <= distance_in_pixels or math.dist(
-                    right_missed_mouse_nose_coord, left_enclosure_top_right) <= distance_in_pixels or math.dist(
+            if math.dist(right_missed_mouse_nose_coord, right_enclosure_top_left) <= distance_in_pixels or math.dist(
+                    right_missed_mouse_nose_coord, right_enclosure_top_right) <= distance_in_pixels or math.dist(
                 right_missed_mouse_nose_coord,
-                left_enclosure_bottom_left) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, left_enclosure_bottom_right) <= distance_in_pixels:
+                right_enclosure_bottom_left) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_bottom_right) <= distance_in_pixels:
                 right_missed_current_sniffle_frame_counter += 1
                 right_missed_total_sniffle_frames += 1
                 right_missed_consecutive = True
