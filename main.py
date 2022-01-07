@@ -3,6 +3,7 @@ import webbrowser
 import pandas as pd
 from accuracy import make_accuracy_buttons
 from social_interaction import make_social_interaction_buttons
+from extract_frames import make_extraction_buttons
 
 pd.set_option("display.max_rows", None, "display.max_columns", None)
 
@@ -28,6 +29,10 @@ social_interaction_frame = tk.Frame(root)
 social_interaction_frame.grid(row=0, column=0, sticky='nsew')
 social_interaction_frame.columnconfigure(0, weight=1)
 
+extraction_frame = tk.Frame(root)
+extraction_frame.grid(row=0, column=0, stick='nsew')
+extraction_frame.columnconfigure(0, weight=1)
+
 
 def main_page_frame_buttons():
     accuracy_btn = tk.Button(main_page_frame, text='Dropped Frames / Accuracy',
@@ -36,9 +41,12 @@ def main_page_frame_buttons():
     social_interaction_btn = tk.Button(main_page_frame, text='Social Interaction',
                                        command=lambda: display_frame(social_interaction_frame))
     social_interaction_btn.grid(row=2, column=0)
+    extraction_btn = tk.Button(main_page_frame, text='Extraction / Manual Testing',
+                               command=lambda: display_frame(extraction_frame))
+    extraction_btn.grid(row=3, column=0)
     github_code_btn = tk.Button(main_page_frame, text='Github Code Page', command=lambda: webbrowser.open(
         'https://github.com/raymon-shi/deeplabcut-social-interaction'))
-    github_code_btn.grid(row=3, column=0)
+    github_code_btn.grid(row=4, column=0)
 
 
 def main_menu_buttons(tk, frame):
@@ -53,6 +61,9 @@ main_menu_buttons(tk, accuracy_frame)
 
 make_social_interaction_buttons(tk, social_interaction_frame)
 main_menu_buttons(tk, social_interaction_frame)
+
+make_extraction_buttons(tk, extraction_frame)
+main_menu_buttons(tk, extraction_frame)
 
 display_frame(main_page_frame)
 main_page_frame_buttons()
