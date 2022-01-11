@@ -7,11 +7,9 @@ The original model was trained on 200 frames that spanned across 4 videos. The m
 This project was inspired by papers such as [Nagai, M., Nagai, H., Numa, C. et al. "Stress-induced sleep-like inactivity modulates stress susceptibility in mice"](https://www.nature.com/articles/s41598-020-76717-8?proof=t#citeas) and [Worley, Nicholas B., et al. “Deeplabcut Analysis of Social Novelty Preference.”](https://www.biorxiv.org/content/10.1101/736983v1)
 
 ## Some Pictures of the Application
-![](images/main.PNG)
-![](images/accuracy.PNG) 
-![](images/extract_frames.PNG) 
-![](images/social_interaction.PNG) 
-![](images/social_interaction_gif.gif) 
+![](images/main.PNG) ![](images/accuracy.PNG) 
+![](images/extract_frames.PNG) ![](images/social_interaction.PNG) 
+![](social_interaction_gif.gif) 
 
 ## Modules
 ```
