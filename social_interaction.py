@@ -21,6 +21,27 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
     left_enclosure_top_right = literal_eval(left_enclosure_inputs[1].get())
     left_enclosure_bottom_left = literal_eval(left_enclosure_inputs[2].get())
     left_enclosure_bottom_right = literal_eval(left_enclosure_inputs[3].get())
+
+    left_enclosure_tltr_middle = (
+        int((left_enclosure_top_left[0] + left_enclosure_top_right[0]) / 2), left_enclosure_top_left[1])
+    left_enclosure_blbr_middle = (
+        int((left_enclosure_bottom_left[0] + left_enclosure_bottom_right[0]) / 2), left_enclosure_bottom_left[1])
+    left_enclosure_trbr_middle = (
+        left_enclosure_top_right[0], int((left_enclosure_top_right[1] + left_enclosure_bottom_right[1]) / 2))
+
+    left_enclosure_tltr_left_middle = (
+        int((left_enclosure_tltr_middle[0] + left_enclosure_top_left[0]) / 2), left_enclosure_top_left[1])
+    left_enclosure_tltr_right_middle = (
+        int((left_enclosure_tltr_middle[0] + left_enclosure_top_right[0]) / 2), left_enclosure_top_left[1])
+    left_enclosure_trbr_top_middle = (
+        left_enclosure_top_right[0], int((left_enclosure_top_right[1] + left_enclosure_trbr_middle[1]) / 2))
+    left_enclosure_trbr_bottom_middle = (
+        left_enclosure_top_right[0], int((left_enclosure_bottom_right[1] + left_enclosure_trbr_middle[1]) / 2))
+    left_enclosure_blbr_left_middle = (
+        int((left_enclosure_blbr_middle[0] + left_enclosure_bottom_left[0]) / 2), left_enclosure_bottom_left[1])
+    left_enclosure_blbr_right_middle = (
+        int((left_enclosure_blbr_middle[0] + left_enclosure_bottom_right[0]) / 2), left_enclosure_bottom_left[1])
+
     left_enclosure = [left_enclosure_top_left, left_enclosure_top_right, left_enclosure_bottom_left,
                       left_enclosure_bottom_right]
 
@@ -29,6 +50,27 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
     right_enclosure_top_right = literal_eval(right_enclosure_inputs[1].get())
     right_enclosure_bottom_left = literal_eval(right_enclosure_inputs[2].get())
     right_enclosure_bottom_right = literal_eval(right_enclosure_inputs[3].get())
+
+    right_enclosure_tltr_middle = (
+        int((right_enclosure_top_left[0] + right_enclosure_top_right[0]) / 2), right_enclosure_top_left[1])
+    right_enclosure_blbr_middle = (
+        int((right_enclosure_bottom_left[0] + right_enclosure_bottom_right[0]) / 2), right_enclosure_bottom_left[1])
+    right_enclosure_tlbl_middle = (
+        right_enclosure_top_left[0], int((right_enclosure_top_left[1] + right_enclosure_bottom_left[1]) / 2))
+
+    right_enclosure_tltr_left_middle = (
+        int((right_enclosure_tltr_middle[0] + right_enclosure_top_left[0]) / 2), right_enclosure_top_left[1])
+    right_enclosure_tltr_right_middle = (
+        int((right_enclosure_tltr_middle[0] + right_enclosure_top_right[0]) / 2), right_enclosure_top_left[1])
+    right_enclosure_tlbl_top_middle = (
+        right_enclosure_top_left[0], int((right_enclosure_top_left[1] + right_enclosure_tlbl_middle[1]) / 2))
+    right_enclosure_tlbl_bottom_middle = (
+        right_enclosure_top_left[0], int((right_enclosure_bottom_left[1] + right_enclosure_tlbl_middle[1]) / 2))
+    right_enclosure_blbr_left_middle = (
+        int((right_enclosure_blbr_middle[0] + right_enclosure_bottom_left[0]) / 2), right_enclosure_bottom_left[1])
+    right_enclosure_blbr_right_middle = (
+        int((right_enclosure_blbr_middle[0] + right_enclosure_bottom_right[0]) / 2), right_enclosure_bottom_left[1])
+
     right_enclosure = [right_enclosure_top_left, right_enclosure_top_right, right_enclosure_bottom_left,
                        right_enclosure_bottom_right]
 
@@ -70,15 +112,23 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
         for row in df_csv[3:].itertuples():
             # left mouse nose x, y
             left_mouse_nose_coord = (float(row[14]), float(row[15]))
-            # count left mouse frames that are present
+            # count left mouse fram        items = cv.findContours(res, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)es that are present
             if not math.isnan(left_mouse_nose_coord[0]) and not math.isnan(left_mouse_nose_coord[1]):
                 left_total_frames += 1
             # check if the mouse at most criteria distance away in pixels using euclidean distance
             if math.dist(left_mouse_nose_coord, left_enclosure_top_left) <= distance_in_pixels or math.dist(
                     left_mouse_nose_coord, left_enclosure_top_right) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord,
-                left_enclosure_bottom_left) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_bottom_right) <= distance_in_pixels:
+                left_mouse_nose_coord, left_enclosure_bottom_left) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_bottom_right) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_tltr_middle) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_blbr_middle) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_trbr_middle) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_tltr_left_middle) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_tltr_right_middle) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_trbr_top_middle) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_trbr_bottom_middle) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_blbr_left_middle) <= distance_in_pixels or math.dist(
+                left_mouse_nose_coord, left_enclosure_blbr_right_middle) <= distance_in_pixels:
                 left_current_sniffle_frame_counter += 1
                 left_total_sniffle_frames += 1
                 left_consecutive = True
@@ -99,9 +149,17 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
             # check if the mouse at most criteria distance away in pixels using euclidean distance
             if math.dist(right_mouse_nose_coord, right_enclosure_top_left) <= distance_in_pixels or math.dist(
                     right_mouse_nose_coord, right_enclosure_top_right) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord,
-                right_enclosure_bottom_left) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_bottom_right) <= distance_in_pixels:
+                right_mouse_nose_coord, right_enclosure_bottom_left) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_bottom_right) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_tltr_middle) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_blbr_middle) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_tlbl_middle) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_tltr_left_middle) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_tltr_right_middle) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_tlbl_top_middle) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_tlbl_bottom_middle) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_blbr_left_middle) <= distance_in_pixels or math.dist(
+                right_mouse_nose_coord, right_enclosure_blbr_right_middle) <= distance_in_pixels:
                 right_current_sniffle_frame_counter += 1
                 right_consecutive = True
                 right_total_sniffle_frames += 1
@@ -123,9 +181,17 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
             # check if the mouse at most criteria distance away in pixels using euclidean distance
             if math.dist(left_missed_mouse_nose_coord, left_enclosure_top_left) <= distance_in_pixels or math.dist(
                     left_missed_mouse_nose_coord, left_enclosure_top_right) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord,
-                left_enclosure_bottom_left) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_bottom_right) <= distance_in_pixels:
+                left_missed_mouse_nose_coord, left_enclosure_bottom_left) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_bottom_right) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_tltr_middle) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_blbr_middle) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_trbr_middle) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_tltr_left_middle) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_tltr_right_middle) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_trbr_top_middle) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_trbr_bottom_middle) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_blbr_left_middle) <= distance_in_pixels or math.dist(
+                left_missed_mouse_nose_coord, left_enclosure_blbr_right_middle) <= distance_in_pixels:
                 left_missed_current_sniffle_frame_counter += 1
                 left_missed_total_sniffle_frames += 1
                 left_missed_consecutive = True
@@ -146,9 +212,17 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
             # check if the mouse at most criteria distance away in pixels using euclidean distance
             if math.dist(right_missed_mouse_nose_coord, right_enclosure_top_left) <= distance_in_pixels or math.dist(
                     right_missed_mouse_nose_coord, right_enclosure_top_right) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord,
-                right_enclosure_bottom_left) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_bottom_right) <= distance_in_pixels:
+                right_missed_mouse_nose_coord, right_enclosure_bottom_left) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_bottom_right) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_tltr_middle) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_blbr_middle) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_tlbl_middle) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_tltr_left_middle) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_tltr_right_middle) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_tlbl_top_middle) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_tlbl_bottom_middle) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_blbr_left_middle) <= distance_in_pixels or math.dist(
+                right_missed_mouse_nose_coord, right_enclosure_blbr_right_middle) <= distance_in_pixels:
                 right_missed_current_sniffle_frame_counter += 1
                 right_missed_total_sniffle_frames += 1
                 right_missed_consecutive = True

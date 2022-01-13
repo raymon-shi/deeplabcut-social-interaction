@@ -37,10 +37,32 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
     left_bl_corner = left_enclosure_bl
     left_br_corner = left_enclosure_br
 
+    left_tltr_mid = (int((left_tl_corner[0] + left_tr_corner[0]) / 2), left_tl_corner[1])
+    left_blbr_mid = (int((left_bl_corner[0] + left_br_corner[0]) / 2), left_bl_corner[1])
+    left_trbr_mid = (left_tr_corner[0], int((left_tr_corner[1] + left_br_corner[1]) / 2))
+
+    left_tltr_l_mid = (int((left_tltr_mid[0] + left_tl_corner[0]) / 2), left_tl_corner[1])
+    left_tltr_r_mid = (int((left_tltr_mid[0] + left_tr_corner[0]) / 2), left_tl_corner[1])
+    left_trbr_t_mid = (left_tr_corner[0], int((left_tr_corner[1] + left_trbr_mid[1]) / 2))
+    left_trbr_b_mid = (left_tr_corner[0], int((left_br_corner[1] + left_trbr_mid[1]) / 2))
+    left_blbr_l_mid = (int((left_blbr_mid[0] + left_bl_corner[0]) / 2), left_bl_corner[1])
+    left_blbr_r_mid = (int((left_blbr_mid[0] + left_br_corner[0]) / 2), left_bl_corner[1])
+
     right_tl_corner = right_enclosure_tl
     right_tr_corner = right_enclosure_tr
     right_bl_corner = right_enclosure_bl
     right_br_corner = right_enclosure_br
+
+    right_tltr_mid = (int((right_tl_corner[0] + right_tr_corner[0]) / 2), right_tl_corner[1])
+    right_blbr_mid = (int((right_bl_corner[0] + right_br_corner[0]) / 2), right_bl_corner[1])
+    right_tlbl_mid = (right_tl_corner[0], int((right_tl_corner[1] + right_bl_corner[1]) / 2))
+
+    right_tltr_l_mid = (int((right_tltr_mid[0] + right_tl_corner[0]) / 2), right_tl_corner[1])
+    right_tltr_r_mid = (int((right_tltr_mid[0] + right_tr_corner[0]) / 2), right_tl_corner[1])
+    right_tlbl_t_mid = (right_tl_corner[0], int((right_tl_corner[1] + right_tlbl_mid[1]) / 2))
+    right_tlbl_b_mid = (right_tl_corner[0], int((right_bl_corner[1] + right_tlbl_mid[1]) / 2))
+    right_blbr_l_mid = (int((right_blbr_mid[0] + right_bl_corner[0]) / 2), right_bl_corner[1])
+    right_blbr_r_mid = (int((right_blbr_mid[0] + right_br_corner[0]) / 2), right_bl_corner[1])
 
     left_sniffle_counter = 0
     left_sniffle_frames = 0
@@ -56,13 +78,6 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
 
     while True:
         ret, frame = capture.read()
-        cvzone.putTextRect(frame, f'A1 Left Sniffle Counter: {left_sniffle_counter}', (25, 500), 1.5)
-        cvzone.putTextRect(frame, f'A1 Left Sniffle Time: {left_total_frames / int(vid_fps.get())}s', (25, 540), 1.5)
-        cvzone.putTextRect(frame, f'A1 Left Sniffle Frames: {left_total_frames}', (25, 580), 1.5)
-
-        cvzone.putTextRect(frame, f'A2 Right Sniffle Counter: {right_sniffle_counter}', (425, 500), 1.5)
-        cvzone.putTextRect(frame, f'A2 Right Sniffle Time: {right_total_frames / int(vid_fps.get())}s', (425, 540), 1.5)
-        cvzone.putTextRect(frame, f'A2 Right Sniffle Frames: {right_total_frames}', (425, 580), 1.5)
         if frame is None:
             break
 
@@ -79,7 +94,16 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
                 if math.dist((x + .5 * w, y + .5 * h), left_tl_corner) <= interact_dist or math.dist(
                         (x + .5 * w, y + .5 * h), left_tr_corner) <= interact_dist or math.dist(
                     (x + .5 * w, y + .5 * h), left_bl_corner) <= interact_dist or math.dist(
-                    (x + .5 * w, y + .5 * h), left_br_corner) <= interact_dist:
+                    (x + .5 * w, y + .5 * h), left_br_corner) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), left_tltr_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), left_blbr_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), left_trbr_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), left_tltr_l_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), left_tltr_r_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), left_trbr_t_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), left_trbr_b_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), left_blbr_l_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), left_blbr_r_mid) <= interact_dist:
                     cv.rectangle(left_area_of_interest, (x, y), (x + w, y + h), (0, 0, 255, 2))
                     left_sniffle_consecutive = True
                     left_sniffle_frames += 1
@@ -93,6 +117,9 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
                 if left_sniffle_frames == 12:
                     left_sniffle_counter += 1
             break
+        cvzone.putTextRect(frame, f'A1 Left Sniffle Counter: {left_sniffle_counter}', (25, 500), 1.5)
+        cvzone.putTextRect(frame, f'A1 Left Sniffle Time: {left_total_frames / int(vid_fps.get())}s', (25, 540), 1.5)
+        cvzone.putTextRect(frame, f'A1 Left Sniffle Frames: {left_total_frames}', (25, 580), 1.5)
 
         right_area_of_interest = frame[int(right_y_start.get()):int(right_y_end.get()),
                                  int(right_x_start.get()):int(right_x_end.get())]
@@ -106,7 +133,16 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
                 if math.dist((x + .5 * w, y + .5 * h), right_tl_corner) <= interact_dist or math.dist(
                         (x + .5 * w, y + .5 * h), right_tr_corner) <= interact_dist or math.dist(
                     (x + .5 * w, y + .5 * h), right_bl_corner) <= interact_dist or math.dist(
-                    (x + .5 * w, y + .5 * h), right_br_corner) <= interact_dist:
+                    (x + .5 * w, y + .5 * h), right_br_corner) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), right_tltr_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), right_blbr_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), right_tlbl_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), right_tltr_l_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), right_tltr_r_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), right_tlbl_t_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), right_tlbl_b_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), right_blbr_l_mid) <= interact_dist or math.dist(
+                    (x + .5 * w, y + .5 * h), right_blbr_r_mid) <= interact_dist:
                     cv.rectangle(right_area_of_interest, (x, y), (x + w, y + h), (0, 0, 255, 2))
                     right_sniffle_consecutive = True
                     right_sniffle_frames += 1
@@ -121,6 +157,9 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
                     right_sniffle_counter += 1
             break
 
+        cvzone.putTextRect(frame, f'A2 Right Sniffle Counter: {right_sniffle_counter}', (425, 500), 1.5)
+        cvzone.putTextRect(frame, f'A2 Right Sniffle Time: {right_total_frames / int(vid_fps.get())}s', (425, 540), 1.5)
+        cvzone.putTextRect(frame, f'A2 Right Sniffle Frames: {right_total_frames}', (425, 580), 1.5)
         cv.imwrite(f"{save_path}/frame-{frame_num}.jpg", frame)
         frame_num += 1
     capture.release()
