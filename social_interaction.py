@@ -6,6 +6,53 @@ import pandas as pd
 from ast import literal_eval
 
 
+def make_midpoints(top_left, top_right, bottom_left, bottom_right, is_left):
+    tltr_mid = (int((top_left[0] + bottom_right[0]) / 2), top_left[1])
+    blbr_mid = (int((bottom_left[0] + bottom_right[0]) / 2), bottom_left[1])
+    trbr_mid = (top_right[0], int((top_right[1] + bottom_right[1]) / 2))
+    tlbl_mid = (top_left[0], int((top_left[1] + bottom_left[1]) / 2))
+
+    tltr_l_mid = (int((tltr_mid[0] + top_left[0]) / 2), top_left[1])
+    tltr_r_mid = (int((tltr_mid[0] + top_right[0]) / 2), top_right[1])
+    blbr_l_mid = (int((blbr_mid[0] + bottom_left[0]) / 2), bottom_left[1])
+    blbr_r_mid = (int((blbr_mid[0] + bottom_right[0]) / 2), bottom_right[1])
+    trbr_u_mid = (top_right[0], int((top_right[1] + trbr_mid[1]) / 2))
+    trbr_d_mid = (bottom_right[0], int((bottom_right[1] + trbr_mid[1]) / 2))
+    tlbl_u_mid = (top_left[0], int((top_left[1] + tlbl_mid[1]) / 2))
+    tlbl_d_mid = (bottom_left[0], int((bottom_left[1] + tlbl_mid[1]) / 2))
+
+    if is_left:
+        return tltr_mid, blbr_mid, trbr_mid, tltr_l_mid, tltr_r_mid, blbr_l_mid, blbr_r_mid, trbr_u_mid, trbr_d_mid
+    return tltr_mid, blbr_mid, tlbl_mid, tltr_l_mid, tltr_r_mid, blbr_l_mid, blbr_r_mid, tlbl_u_mid, tlbl_d_mid
+
+
+def check_distance(mouse_nose_coord, enclosure_points_list, interaction_dist_pixel):
+    for enclosure_point in enclosure_points_list:
+        if math.dist(mouse_nose_coord, enclosure_point) <= interaction_dist_pixel:
+            return True
+    return False
+
+
+def update_counters(first_col, second_col, enclosure, dist_pix, total_frames_counter, total_sniffle_frames_counter,
+                    current_sniffle_frame_counter, sniffle_counter, required_frames):
+    mouse_nose_coord = (float(first_col), float(second_col))
+    if not math.isnan(mouse_nose_coord[0]) and not math.isnan(mouse_nose_coord[1]):
+        total_frames_counter += 1
+    if check_distance(mouse_nose_coord, enclosure, dist_pix):
+        current_sniffle_frame_counter += 1
+        total_sniffle_frames_counter += 1
+        consecutive = True
+    else:
+        consecutive = False
+
+    if not consecutive:
+        current_sniffle_frame_counter = 0
+    if current_sniffle_frame_counter == required_frames:
+        sniffle_counter += 1
+
+    return total_frames_counter, total_sniffle_frames_counter, current_sniffle_frame_counter, sniffle_counter
+
+
 def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclosure_inputs, time_inputs, video_inputs,
                        exp_inputs):
     # inches-pixel conversion
@@ -22,28 +69,17 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
     left_enclosure_bottom_left = literal_eval(left_enclosure_inputs[2].get())
     left_enclosure_bottom_right = literal_eval(left_enclosure_inputs[3].get())
 
-    left_enclosure_tltr_middle = (
-        int((left_enclosure_top_left[0] + left_enclosure_top_right[0]) / 2), left_enclosure_top_left[1])
-    left_enclosure_blbr_middle = (
-        int((left_enclosure_bottom_left[0] + left_enclosure_bottom_right[0]) / 2), left_enclosure_bottom_left[1])
-    left_enclosure_trbr_middle = (
-        left_enclosure_top_right[0], int((left_enclosure_top_right[1] + left_enclosure_bottom_right[1]) / 2))
-
-    left_enclosure_tltr_left_middle = (
-        int((left_enclosure_tltr_middle[0] + left_enclosure_top_left[0]) / 2), left_enclosure_top_left[1])
-    left_enclosure_tltr_right_middle = (
-        int((left_enclosure_tltr_middle[0] + left_enclosure_top_right[0]) / 2), left_enclosure_top_left[1])
-    left_enclosure_trbr_top_middle = (
-        left_enclosure_top_right[0], int((left_enclosure_top_right[1] + left_enclosure_trbr_middle[1]) / 2))
-    left_enclosure_trbr_bottom_middle = (
-        left_enclosure_top_right[0], int((left_enclosure_bottom_right[1] + left_enclosure_trbr_middle[1]) / 2))
-    left_enclosure_blbr_left_middle = (
-        int((left_enclosure_blbr_middle[0] + left_enclosure_bottom_left[0]) / 2), left_enclosure_bottom_left[1])
-    left_enclosure_blbr_right_middle = (
-        int((left_enclosure_blbr_middle[0] + left_enclosure_bottom_right[0]) / 2), left_enclosure_bottom_left[1])
+    left_enclosure_tltr_middle, left_enclosure_blbr_middle, left_enclosure_trbr_middle, \
+    left_enclosure_tltr_left_middle, left_enclosure_tltr_right_middle, left_enclosure_blbr_left_middle, \
+    left_enclosure_blbr_right_middle, left_enclosure_trbr_top_middle, \
+    left_enclosure_trbr_bottom_middle = make_midpoints(left_enclosure_top_left, left_enclosure_top_right,
+                                                       left_enclosure_bottom_left, left_enclosure_bottom_right, True)
 
     left_enclosure = [left_enclosure_top_left, left_enclosure_top_right, left_enclosure_bottom_left,
-                      left_enclosure_bottom_right]
+                      left_enclosure_bottom_right, left_enclosure_tltr_middle, left_enclosure_blbr_middle,
+                      left_enclosure_trbr_middle, left_enclosure_tltr_left_middle, left_enclosure_tltr_right_middle,
+                      left_enclosure_blbr_left_middle, left_enclosure_blbr_right_middle, left_enclosure_trbr_top_middle,
+                      left_enclosure_trbr_bottom_middle]
 
     # right enclosure
     right_enclosure_top_left = literal_eval(right_enclosure_inputs[0].get())
@@ -51,28 +87,18 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
     right_enclosure_bottom_left = literal_eval(right_enclosure_inputs[2].get())
     right_enclosure_bottom_right = literal_eval(right_enclosure_inputs[3].get())
 
-    right_enclosure_tltr_middle = (
-        int((right_enclosure_top_left[0] + right_enclosure_top_right[0]) / 2), right_enclosure_top_left[1])
-    right_enclosure_blbr_middle = (
-        int((right_enclosure_bottom_left[0] + right_enclosure_bottom_right[0]) / 2), right_enclosure_bottom_left[1])
-    right_enclosure_tlbl_middle = (
-        right_enclosure_top_left[0], int((right_enclosure_top_left[1] + right_enclosure_bottom_left[1]) / 2))
-
-    right_enclosure_tltr_left_middle = (
-        int((right_enclosure_tltr_middle[0] + right_enclosure_top_left[0]) / 2), right_enclosure_top_left[1])
-    right_enclosure_tltr_right_middle = (
-        int((right_enclosure_tltr_middle[0] + right_enclosure_top_right[0]) / 2), right_enclosure_top_left[1])
-    right_enclosure_tlbl_top_middle = (
-        right_enclosure_top_left[0], int((right_enclosure_top_left[1] + right_enclosure_tlbl_middle[1]) / 2))
-    right_enclosure_tlbl_bottom_middle = (
-        right_enclosure_top_left[0], int((right_enclosure_bottom_left[1] + right_enclosure_tlbl_middle[1]) / 2))
-    right_enclosure_blbr_left_middle = (
-        int((right_enclosure_blbr_middle[0] + right_enclosure_bottom_left[0]) / 2), right_enclosure_bottom_left[1])
-    right_enclosure_blbr_right_middle = (
-        int((right_enclosure_blbr_middle[0] + right_enclosure_bottom_right[0]) / 2), right_enclosure_bottom_left[1])
+    right_enclosure_tltr_middle, right_enclosure_blbr_middle, right_enclosure_tlbl_middle, \
+    right_enclosure_tltr_left_middle, right_enclosure_tltr_right_middle, right_enclosure_blbr_left_middle, \
+    right_enclosure_blbr_right_middle, right_enclosure_tlbl_top_middle, \
+    right_enclosure_tlbl_bottom_middle = make_midpoints(right_enclosure_top_left, right_enclosure_top_right,
+                                                        right_enclosure_bottom_left, right_enclosure_bottom_right,
+                                                        False)
 
     right_enclosure = [right_enclosure_top_left, right_enclosure_top_right, right_enclosure_bottom_left,
-                       right_enclosure_bottom_right]
+                       right_enclosure_bottom_right, right_enclosure_tltr_middle, right_enclosure_blbr_middle,
+                       right_enclosure_tlbl_middle, right_enclosure_tltr_left_middle, right_enclosure_tltr_right_middle,
+                       right_enclosure_blbr_left_middle, right_enclosure_blbr_right_middle,
+                       right_enclosure_tlbl_top_middle, right_enclosure_tlbl_bottom_middle]
 
     # time criteria
     time_criteria_ms = int(time_inputs.get())
@@ -97,150 +123,57 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
         df_csv = pd.read_csv(file, index_col=False)
         # left mouse counters
         left_current_sniffle_frame_counter, left_total_sniffle_frames, left_sniffle_counter, left_total_frames = 0, 0, 0, 0
-        left_consecutive = False
         # right mouse counters
         right_current_sniffle_frame_counter, right_total_sniffle_frames, right_sniffle_counter, right_total_frames = 0, 0, 0, 0
-        right_consecutive = False
         # left missed mouse counters
         left_missed_current_sniffle_frame_counter, left_missed_total_sniffle_frames, left_missed_sniffle_counter, left_missed_total_frames = 0, 0, 0, 0
-        left_missed_consecutive = False
         # right missed mouse counters
         right_missed_current_sniffle_frame_counter, right_missed_total_sniffle_frames, right_missed_sniffle_counter, right_missed_total_frames = 0, 0, 0, 0
-        right_missed_consecutive = False
         # other counters
         mouse_counter = 1
         for row in df_csv[3:].itertuples():
-            # left mouse nose x, y
-            left_mouse_nose_coord = (float(row[14]), float(row[15]))
-            # count left mouse fram        items = cv.findContours(res, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)es that are present
-            if not math.isnan(left_mouse_nose_coord[0]) and not math.isnan(left_mouse_nose_coord[1]):
-                left_total_frames += 1
-            # check if the mouse at most criteria distance away in pixels using euclidean distance
-            if math.dist(left_mouse_nose_coord, left_enclosure_top_left) <= distance_in_pixels or math.dist(
-                    left_mouse_nose_coord, left_enclosure_top_right) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_bottom_left) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_bottom_right) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_tltr_middle) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_blbr_middle) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_trbr_middle) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_tltr_left_middle) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_tltr_right_middle) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_trbr_top_middle) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_trbr_bottom_middle) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_blbr_left_middle) <= distance_in_pixels or math.dist(
-                left_mouse_nose_coord, left_enclosure_blbr_right_middle) <= distance_in_pixels:
-                left_current_sniffle_frame_counter += 1
-                left_total_sniffle_frames += 1
-                left_consecutive = True
-            else:
-                left_consecutive = False
-            # reset the current frame counter if not consecutive frames
-            if not left_consecutive:
-                left_current_sniffle_frame_counter = 0
-            # increase the sniffle counter once it reaches the required frame amount
-            if left_current_sniffle_frame_counter == required_frames_for_sniffle:
-                left_sniffle_counter += 1
-
-            # right mouse nose x, y
-            right_mouse_nose_coord = (float(row[2]), float(row[3]))
-            # count right mouse frames that are present
-            if not math.isnan(right_mouse_nose_coord[0]) and not math.isnan(right_mouse_nose_coord[1]):
-                right_total_frames += 1
-            # check if the mouse at most criteria distance away in pixels using euclidean distance
-            if math.dist(right_mouse_nose_coord, right_enclosure_top_left) <= distance_in_pixels or math.dist(
-                    right_mouse_nose_coord, right_enclosure_top_right) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_bottom_left) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_bottom_right) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_tltr_middle) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_blbr_middle) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_tlbl_middle) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_tltr_left_middle) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_tltr_right_middle) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_tlbl_top_middle) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_tlbl_bottom_middle) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_blbr_left_middle) <= distance_in_pixels or math.dist(
-                right_mouse_nose_coord, right_enclosure_blbr_right_middle) <= distance_in_pixels:
-                right_current_sniffle_frame_counter += 1
-                right_consecutive = True
-                right_total_sniffle_frames += 1
-            else:
-                right_consecutive = False
-            # reset the current frame counter if not consecutive frames
-            if not right_consecutive:
-                right_current_sniffle_frame_counter = 0
-            # increase the sniffle counter once it reaches the required frame amount
-            if right_current_sniffle_frame_counter == required_frames_for_sniffle:
-                right_sniffle_counter += 1
-
-            # the output format from DLC is a bit inconsistent, so we have to catch the ones that we missed
-            # left mouse nose x, y
-            left_missed_mouse_nose_coord = (float(row[2]), float(row[3]))
-            # count left mouse frames that are present
-            if not math.isnan(left_missed_mouse_nose_coord[0]) and not math.isnan(left_missed_mouse_nose_coord[1]):
-                left_missed_total_frames += 1
-            # check if the mouse at most criteria distance away in pixels using euclidean distance
-            if math.dist(left_missed_mouse_nose_coord, left_enclosure_top_left) <= distance_in_pixels or math.dist(
-                    left_missed_mouse_nose_coord, left_enclosure_top_right) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_bottom_left) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_bottom_right) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_tltr_middle) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_blbr_middle) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_trbr_middle) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_tltr_left_middle) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_tltr_right_middle) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_trbr_top_middle) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_trbr_bottom_middle) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_blbr_left_middle) <= distance_in_pixels or math.dist(
-                left_missed_mouse_nose_coord, left_enclosure_blbr_right_middle) <= distance_in_pixels:
-                left_missed_current_sniffle_frame_counter += 1
-                left_missed_total_sniffle_frames += 1
-                left_missed_consecutive = True
-            else:
-                left_missed_consecutive = False
-            # reset the current frame counter if not consecutive frames
-            if not left_missed_consecutive:
-                left_missed_current_sniffle_frame_counter = 0
-            # increase the sniffle counter once it reaches the required frame amount
-            if left_missed_current_sniffle_frame_counter == required_frames_for_sniffle:
-                left_missed_sniffle_counter += 1
-
-            # right mouse nose x, y
-            right_missed_mouse_nose_coord = (float(row[14]), float(row[15]))
-            # count right mouse frames that are present
-            if not math.isnan(right_missed_mouse_nose_coord[0]) and not math.isnan(right_missed_mouse_nose_coord[1]):
-                right_missed_total_frames += 1
-            # check if the mouse at most criteria distance away in pixels using euclidean distance
-            if math.dist(right_missed_mouse_nose_coord, right_enclosure_top_left) <= distance_in_pixels or math.dist(
-                    right_missed_mouse_nose_coord, right_enclosure_top_right) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_bottom_left) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_bottom_right) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_tltr_middle) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_blbr_middle) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_tlbl_middle) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_tltr_left_middle) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_tltr_right_middle) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_tlbl_top_middle) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_tlbl_bottom_middle) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_blbr_left_middle) <= distance_in_pixels or math.dist(
-                right_missed_mouse_nose_coord, right_enclosure_blbr_right_middle) <= distance_in_pixels:
-                right_missed_current_sniffle_frame_counter += 1
-                right_missed_total_sniffle_frames += 1
-                right_missed_consecutive = True
-            else:
-                right_missed_consecutive = False
-            # reset the current frame counter if not consecutive frames
-            if not right_missed_consecutive:
-                right_missed_current_sniffle_frame_counter = 0
-            # increase the sniffle counter once it reaches the required frame amount
-            if right_missed_current_sniffle_frame_counter == required_frames_for_sniffle:
-                right_missed_sniffle_counter += 1
+            left_total_frames, left_total_sniffle_frames, \
+            left_current_sniffle_frame_counter, left_sniffle_counter = update_counters(row[14], row[15], left_enclosure,
+                                                                                       distance_in_pixels,
+                                                                                       left_total_frames,
+                                                                                       left_total_sniffle_frames,
+                                                                                       left_current_sniffle_frame_counter,
+                                                                                       left_sniffle_counter,
+                                                                                       required_frames_for_sniffle)
+            right_total_frames, right_total_sniffle_frames, \
+            right_current_sniffle_frame_counter, right_sniffle_counter = update_counters(row[2], row[3],
+                                                                                         right_enclosure,
+                                                                                         distance_in_pixels,
+                                                                                         right_total_frames,
+                                                                                         right_total_sniffle_frames,
+                                                                                         right_current_sniffle_frame_counter,
+                                                                                         right_sniffle_counter,
+                                                                                         required_frames_for_sniffle)
+            left_missed_total_frames, left_missed_total_sniffle_frames, \
+            left_missed_current_sniffle_frame_counter, left_missed_sniffle_counter = update_counters(row[2], row[3],
+                                                                                                     left_enclosure,
+                                                                                                     distance_in_pixels,
+                                                                                                     left_missed_total_frames,
+                                                                                                     left_missed_total_sniffle_frames,
+                                                                                                     left_missed_current_sniffle_frame_counter,
+                                                                                                     left_missed_sniffle_counter,
+                                                                                                     required_frames_for_sniffle)
+            right_missed_total_frames, right_missed_total_sniffle_frames, \
+            right_missed_current_sniffle_frame_counter, right_missed_sniffle_counter = update_counters(row[14], row[15],
+                                                                                                       right_enclosure,
+                                                                                                       distance_in_pixels,
+                                                                                                       right_missed_total_frames,
+                                                                                                       right_missed_total_sniffle_frames,
+                                                                                                       right_missed_current_sniffle_frame_counter,
+                                                                                                       right_missed_sniffle_counter,
+                                                                                                       required_frames_for_sniffle)
 
         mouse_entry['trial_' + str(index + 1) + '_mouse_' + str(mouse_counter)] = [left_sniffle_counter,
                                                                                    left_total_sniffle_frames,
                                                                                    left_total_sniffle_frames / video_fps,
                                                                                    left_total_sniffle_frames / left_total_frames * 100,
                                                                                    (
-                                                                                           left_total_sniffle_frames / video_fps) / trial_runtime_s * 100]
+                                                                                               left_total_sniffle_frames / video_fps) / trial_runtime_s * 100]
         mouse_entry_missed['trial_' + str(index + 1) + '_mouse_' + str(mouse_counter)] = [left_missed_sniffle_counter,
                                                                                           left_missed_total_sniffle_frames,
                                                                                           left_missed_total_sniffle_frames / video_fps,
