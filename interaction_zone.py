@@ -8,6 +8,17 @@ from ast import literal_eval
 
 def interaction_zone_area(arena_top_corner, arena_bottom_corner, side, pixel_per_cm, interaction_dist,
                           interaction_width, interaction_length):
+    """
+    A function that returns the coordinates for the interaction zone area
+    :param arena_top_corner: The arena top corner coordinate
+    :param arena_bottom_corner: The arena bottom corner coordinate
+    :param side: Left or Right arena
+    :param pixel_per_cm: The amount of pixels for centimeter conversion
+    :param interaction_dist: The interaction distance in pixels
+    :param interaction_width: The width of the interaction zone area
+    :param interaction_length: The length of the itneraction zone area
+    :return: A list of coordinates that correspond to the interaction zone area
+    """
     if side == 'left':
         tl_corner = (arena_top_corner[0], int(arena_top_corner[1] + interaction_dist * pixel_per_cm))
         bl_corner = (arena_bottom_corner[0], int(arena_bottom_corner[1] - interaction_dist * pixel_per_cm))
@@ -24,6 +35,13 @@ def interaction_zone_area(arena_top_corner, arena_bottom_corner, side, pixel_per
 
 
 def check_zone(mouse_coord, interaction_zone_corners):
+    """
+    A function that checks if the mouse's nose is within the interaction zone
+    :param mouse_coord: The (x,y) coordinates of the mouse's nose
+    :param interaction_zone_corners: A list containing the coordinates of the interaction zone
+    :return: A boolean value depending if the condition is met
+    """
+    # checks if the mouse's nose is within the restricted area
     if interaction_zone_corners[0][0] <= mouse_coord[0] <= interaction_zone_corners[3][0] and \
             interaction_zone_corners[0][
                 1] <= mouse_coord[1] <= interaction_zone_corners[3][1]:
@@ -33,6 +51,17 @@ def check_zone(mouse_coord, interaction_zone_corners):
 
 def update_counters(first_col, second_col, total_frames, interaction_frames,
                     interaction_entries, zone, current_frame):
+    """
+    A function that updates all related counters
+    :param first_col: The column corresponding to the x position of the mouse's nose
+    :param second_col: The column corresponding to the y position of the mouse's nose
+    :param total_frames: The total amount of frames in the video
+    :param interaction_frames: The total amount of interaction frame for the mouse
+    :param interaction_entries: The mouse's total entry counter
+    :param zone: The list of zone coordinates
+    :param current_frame: The current amount of frames going towards the interaction
+    :return: An updated version of each counter if the conditions are met
+    """
     mouse_coord = (float(first_col), float(second_col))
     if not math.isnan(mouse_coord[0]) and not math.isnan(mouse_coord[1]):
         total_frames += 1
@@ -53,6 +82,18 @@ def update_counters(first_col, second_col, total_frames, interaction_frames,
 
 def interaction_zone(enclosure_length_cm, enclosure_length_pix, interact_dist, interact_width, interact_length,
                      left_arena_top, left_arena_bot, right_arena_top, right_arena_bot):
+    """
+    A function that produces a CSV with information about the time in the interaction zone and entries in the zone
+    :param enclosure_length_cm: The length of the enclosure in cm
+    :param enclosure_length_pix: The length of the enclosure in pixels
+    :param interact_dist: The interaction distance in pixel
+    :param interact_width: The interaction zone width
+    :param interact_length: The interaction zone length
+    :param left_arena_top: The top corner in the left arena
+    :param left_arena_bot: The bottom corner in the left arena
+    :param right_arena_top: The top corner in the right arena
+    :param right_arena_bot: The bottom corner in the right arena
+    """
     enclosure_len_cm = int(enclosure_length_cm.get())
     enclosure_len_pix = int(enclosure_length_pix.get())
     pix_per_cm = enclosure_len_pix / enclosure_len_cm
@@ -60,6 +101,7 @@ def interaction_zone(enclosure_length_cm, enclosure_length_pix, interact_dist, i
     l_arena_top, l_arena_bot = literal_eval(left_arena_top.get()), literal_eval(left_arena_bot.get())
     r_arena_top, r_arena_bot = literal_eval(right_arena_top.get()), literal_eval(right_arena_bot.get())
 
+    # create interaction zone area
     la_tl, la_tr, la_bl, la_br = interaction_zone_area(l_arena_top, l_arena_bot, 'left', pix_per_cm,
                                                        int(interact_dist.get()),
                                                        int(interact_width.get()), int(interact_length.get()))
@@ -70,9 +112,7 @@ def interaction_zone(enclosure_length_cm, enclosure_length_pix, interact_dist, i
     left_interaction_zone = [la_tl, la_tr, la_bl, la_br]
     right_interaction_zone = [ra_tl, ra_tr, ra_bl, ra_br]
 
-    print(left_interaction_zone, 'left')
-    print(right_interaction_zone, 'right')
-
+    # set up file directory
     file_path = filedialog.askdirectory()
     pattern = os.path.join(file_path, '*.csv')
     files = glob.glob(pattern)
@@ -80,6 +120,7 @@ def interaction_zone(enclosure_length_cm, enclosure_length_pix, interact_dist, i
     mouse_entry = dict()
     mouse_entry_missed = dict()
 
+    # iterate the files and update the counters
     for index, file in enumerate(files):
         df_csv = pd.read_csv(file, index_col=False)
         left_total_interaction_frames, left_total_interaction_entries, left_total_frames, left_current_frame = 0, 0, 0, 0
@@ -131,6 +172,7 @@ def interaction_zone(enclosure_length_cm, enclosure_length_pix, interact_dist, i
         mouse_entry_missed['trial_' + str(index + 1) + '_mouse_' + str(mouse_counter)] = [
             right_missed_total_interaction_frames / 25,
             right_missed_total_interaction_entries]
+    # convert the dictionaries into df, then into CSV file
     interaction_zone_df = pd.DataFrame.from_dict(mouse_entry, orient='index',
                                                  columns=['Time in Interaction Zone (s)', 'Entries in Interaction Zone'])
     interaction_zone_filtered_df = interaction_zone_df[(interaction_zone_df['Time in Interaction Zone (s)'] == 0) & (
@@ -147,6 +189,12 @@ def interaction_zone(enclosure_length_cm, enclosure_length_pix, interact_dist, i
 
 
 def make_interaction_zone_buttons(tk, root):
+    """
+    Creates the buttons and UI for the interaction zone functionalities
+    :param tk:
+    :param root:
+    :return:
+    """
     iz_enclosure_pixel_label = tk.Label(root, text='Enter enclosure length in pixels:')
     iz_enclosure_pixel_label.grid(row=0, column=0)
     iz_enclosure_pixel_entry = tk.Entry(root, width=30, justify='center')

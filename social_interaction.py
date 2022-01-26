@@ -7,10 +7,25 @@ from ast import literal_eval
 
 
 def avg(corner_one, corner_two):
+    """
+    Calculates the average (x,y) coordinates from two coordinate pairs
+    :param corner_one: The first coordinates (x,y)
+    :param corner_two: The second coordinates (x,y)
+    :return: The midpoint between the two coordinates
+    """
     return int((corner_one[0] + corner_two[0]) / 2), int((corner_one[1] + corner_two[1]) / 2)
 
 
 def make_midpoints(top_left, top_right, bottom_left, bottom_right, is_left):
+    """
+    Calculates the the midpoint coordinates for the entire enclosure
+    :param top_left: The coordinates of the top-left enclosure corner
+    :param top_right: The coordinates of the top-right enclosure corner
+    :param bottom_left: The coordinates of the bottom-left enclosure corner
+    :param bottom_right: The coordinates of the bottom-right enclosure corner
+    :param is_left: A boolean checking for the left or right enclosure
+    :return: All the coordinates around the enclosure
+    """
     tltr_mid = avg(top_left, top_right)
     blbr_mid = avg(bottom_left, bottom_right)
     trbr_mid = avg(top_right, bottom_right)
@@ -31,7 +46,16 @@ def make_midpoints(top_left, top_right, bottom_left, bottom_right, is_left):
 
 
 def check_distance(mouse_nose_coord, enclosure_points_list, interaction_dist_pixel):
+    """
+    Checks if the mouse is within the interaction distance for each point around the enclosure
+    :param mouse_nose_coord: The mouse's (x,y) nose coordinate
+    :param enclosure_points_list: A list of all the enclosure point coordinates for one side
+    :param interaction_dist_pixel: The interaction distince in pixel length
+    :return: A true or false value, depending if the condition is met
+    """
+    # iterate through all the points
     for enclosure_point in enclosure_points_list:
+        # check if the distance is within interaction distance
         if math.dist(mouse_nose_coord, enclosure_point) <= interaction_dist_pixel:
             return True
     return False
@@ -39,9 +63,24 @@ def check_distance(mouse_nose_coord, enclosure_points_list, interaction_dist_pix
 
 def update_counters(first_col, second_col, enclosure, dist_pix, total_frames_counter, total_sniffle_frames_counter,
                     current_sniffle_frame_counter, sniffle_counter, required_frames):
+    """
+    Updates all the frame counters if they satisfy the conditions
+    :param first_col: The column corresponding to the x position of the mouse's nose
+    :param second_col: The column corresponding to the y position of the mouse's nose
+    :param enclosure: The list of enclosure coordinates
+    :param dist_pix: The interaction distance in pixel length
+    :param total_frames_counter: The total amount of frames in the video
+    :param total_sniffle_frames_counter: The total amount of sniffles frame for the mouse
+    :param current_sniffle_frame_counter: The current amount of frames going towards the sniffle requirement
+    :param sniffle_counter: The mouse's total sniffle counter
+    :param required_frames: The amount of frames needed for a sniffle bout
+    :return: An updated version of the total frame counter, the total sniffle frame counter, the current sniffle frame counter, and the sniffle counter
+    """
     mouse_nose_coord = (float(first_col), float(second_col))
+    # increment the total frame counter
     if not math.isnan(mouse_nose_coord[0]) and not math.isnan(mouse_nose_coord[1]):
         total_frames_counter += 1
+    # if the condition is met, increase current and total sniffle counteres
     if check_distance(mouse_nose_coord, enclosure, dist_pix):
         current_sniffle_frame_counter += 1
         total_sniffle_frames_counter += 1
@@ -49,8 +88,10 @@ def update_counters(first_col, second_col, enclosure, dist_pix, total_frames_cou
     else:
         consecutive = False
 
+    # if the frames aren't consecutive, reset the counter
     if not consecutive:
         current_sniffle_frame_counter = 0
+    # increase the sniffle counter once if the required frames is met
     if current_sniffle_frame_counter == required_frames:
         sniffle_counter += 1
 
@@ -59,6 +100,15 @@ def update_counters(first_col, second_col, enclosure, dist_pix, total_frames_cou
 
 def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclosure_inputs, time_inputs, video_inputs,
                        exp_inputs):
+    """
+    A function that produces a CSV containing the total sniffles, total sniffle frames, total sniffle time, and percentage of sniffle frames and time
+    :param enclosure_conversion: A list of enclosure measurements and interaction distance
+    :param left_enclosure_inputs: A list of left enclosure coordinates
+    :param right_enclosure_inputs: A list of right enclosure coordinates
+    :param time_inputs: The interaction time requirement
+    :param video_inputs: The frames per second for the video
+    :param exp_inputs: The experimental time for each trial
+    """
     # inches-pixel conversion
     enclosure_pixel_length = int(enclosure_conversion[0].get())
     enclosure_cm_length = float(enclosure_conversion[1].get())
@@ -66,7 +116,6 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
     mouse_interaction_dist_cm = float(enclosure_conversion[2].get())
     distance_in_pixels = pixel_per_cm * mouse_interaction_dist_cm
 
-    # enclosure corner pixel location
     # left enclosure
     left_enclosure_top_left = literal_eval(left_enclosure_inputs[0].get())
     left_enclosure_top_right = literal_eval(left_enclosure_inputs[1].get())
@@ -116,6 +165,7 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
     # round down for the sake of simplicity because fractional frames aren't possible
     required_frames_for_sniffle = math.floor(video_fps * time_criteria_s)
 
+    # finding directory
     file_path = filedialog.askdirectory()
     pattern = os.path.join(file_path, '*.csv')
     files = glob.glob(pattern)
@@ -135,6 +185,8 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
         right_missed_current_sniffle_frame_counter, right_missed_total_sniffle_frames, right_missed_sniffle_counter, right_missed_total_frames = 0, 0, 0, 0
         # other counters
         mouse_counter = 1
+
+        # iterate through all the rows and update the counters
         for row in df_csv[3:].itertuples():
             left_total_frames, left_total_sniffle_frames, \
             left_current_sniffle_frame_counter, left_sniffle_counter = update_counters(row[14], row[15], left_enclosure,
@@ -172,6 +224,7 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
                                                                                                        right_missed_sniffle_counter,
                                                                                                        required_frames_for_sniffle)
 
+        # update information for each mouse
         mouse_entry['trial_' + str(index + 1) + '_mouse_' + str(mouse_counter)] = [left_sniffle_counter,
                                                                                    left_total_sniffle_frames,
                                                                                    left_total_sniffle_frames / video_fps,
@@ -226,6 +279,11 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
 
 
 def make_social_interaction_buttons(tk, root):
+    """
+    Creates the UI for the social interaction functionality
+    :param tk:
+    :param root:
+    """
     si_enclosure_pixel_label = tk.Label(root, text='Enter enclosure length in pixels:')
     si_enclosure_pixel_label.grid(row=0, column=0)
     si_enclosure_pixel_entry = tk.Entry(root, width=30, justify='center')

@@ -6,14 +6,22 @@ import cv2 as cv
 import os
 import re
 from ast import literal_eval
-
 import pandas as pd
-
 from social_interaction import make_midpoints
 import cvzone
 
 
 def check_point(x, y, w, h, enclosure, interaction_dist):
+    """
+    Check if the center of the mouse's nose is within the interaction distance
+    :param x: Top left x coordinate
+    :param y: Top left y coordinate
+    :param w: The width of the rectangle
+    :param h: The height of the rectangle
+    :param enclosure: A list containing the coordinates of the enclosure
+    :param interaction_dist: The interaction distance to meet a sniffle bout
+    :return: A boolean value depending if the condition was met
+    """
     for point in enclosure:
         if math.dist((x + .5 * w, y + .5 * h), point) <= interaction_dist:
             return True
@@ -21,7 +29,25 @@ def check_point(x, y, w, h, enclosure, interaction_dist):
 
 
 def update_ctr(x_start, x_end, y_start, y_end, l_range, u_range, frame, enclosure, interaction_dist, total_frames,
-               current_frames, sniffle_counter):
+               current_frames, sniffle_counter, req_frames):
+    """
+    Updates all the frame counter if they satisfy the conditions
+    :param x_start: The starting x position
+    :param x_end: The ending x position
+    :param y_start: The starting y position
+    :param y_end: The ending y position
+    :param l_range: The lower HSV range for purple
+    :param u_range: the upper HSV range for purple
+    :param frame: The working image from OpenCV
+    :param enclosure: A list of coordinates for the enclosure
+    :param interaction_dist: The interaction distance needed for a sniffle bout
+    :param total_frames: The total sniffle frame counter
+    :param current_frames: The current frame counter
+    :param sniffle_counter: The total sniffle counter
+    :param req_frames: The amount of frames needed for a sniffle
+    :return: An updated version of all the counters
+    """
+    # the specific area corresponding to the arena
     area_of_interest = frame[int(y_start.get()):int(y_end.get()), int(x_start.get()):int(x_end.get())]
     hsv = cv.cvtColor(area_of_interest, cv.COLOR_BGR2HSV)
     mask = cv.inRange(hsv, l_range, u_range)
@@ -31,17 +57,21 @@ def update_ctr(x_start, x_end, y_start, y_end, l_range, u_range, frame, enclosur
         area = cv.contourArea(contour)
         if area > 10:
             x, y, w, h = cv.boundingRect(contour)
+            # draw a red box if within the interaction distance
             if check_point(x, y, w, h, enclosure, interaction_dist):
                 cv.rectangle(area_of_interest, (x, y), (x + w, y + h), (0, 0, 255), 2)
                 consecutive = True
                 current_frames += 1
                 total_frames += 1
             else:
+                # draw a green box otherwise
                 consecutive = False
                 cv.rectangle(area_of_interest, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # reset if the frames aren't consecutive
             if not consecutive:
                 current_frames = 0
-            if current_frames == 12:
+
+            if current_frames == req_frames:
                 sniffle_counter += 1
         break
 
@@ -49,6 +79,14 @@ def update_ctr(x_start, x_end, y_start, y_end, l_range, u_range, frame, enclosur
 
 
 def extract_one_frame(left_x_start, left_x_end, left_y_start, left_y_end):
+    """
+    A function that extracts one frame
+    :param left_x_start: The left starting x position
+    :param left_x_end: The left ending x position
+    :param left_y_start: The left starting y position
+    :param left_y_end: The left ending y position
+    """
+    # asking for file path
     file_path = filedialog.askopenfilename()
     capture = cv.VideoCapture(filename=file_path)
     save_path = filedialog.asksaveasfilename(defaultextension='.jpg', title='Save the Frame')
@@ -63,14 +101,41 @@ def extract_one_frame(left_x_start, left_x_end, left_y_start, left_y_end):
 def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, interaction_dist_cm, enclosure_len_pix,
                         enclosure_len_cm, vid_fps, left_enclosure_tl, left_enclosure_tr, left_enclosure_bl,
                         left_enclosure_br, right_x_start, right_x_end, right_y_start, right_y_end, right_enclosure_tl,
-                        right_enclosure_tr, right_enclosure_bl, right_enclosure_br):
+                        right_enclosure_tr, right_enclosure_bl, right_enclosure_br, interaction_time):
+    """
+    A function that analyzes each video, extracts all the frames, and stores the frames in another location
+    :param left_x_start: The left starting x position
+    :param left_x_end: The left ending x position
+    :param left_y_start: The left starting y position
+    :param left_y_end: The left ending y position
+    :param interaction_dist_cm: The interaction distance in centimeters
+    :param enclosure_len_pix: The enclosure length in pixel
+    :param enclosure_len_cm: The enclosure length in centimeters
+    :param vid_fps: The frames per second in the video
+    :param left_enclosure_tl: The top left corner of the left enclosure
+    :param left_enclosure_tr: The top right corner of the left enclosure
+    :param left_enclosure_bl: The bottom left corner of the left enclosure
+    :param left_enclosure_br: The bottom right corner of the left enclosure
+    :param right_x_start: The right starting x position
+    :param right_x_end: The right ending x position
+    :param right_y_start: The right starting y position
+    :param right_y_end: The right ending y position
+    :param right_enclosure_tl: The top left corner of the right enclosure
+    :param right_enclosure_tr: The top right corner of the right enclosure
+    :param right_enclosure_bl: The bottom left corner of the right enclosure
+    :param right_enclosure_br: The bottom right corner of the right enclosure
+    :param interaction_time: The interaction time required for a sniffle
+    """
+    # asking for directory path and save path
     file_path = filedialog.askopenfilename()
     capture = cv.VideoCapture(filename=file_path)
     save_path = filedialog.askdirectory()
 
+    # calculate interaction in pixels
     pix_per_cm = int(enclosure_len_pix.get()) / float(enclosure_len_cm.get())
     interact_dist = int(interaction_dist_cm.get()) * pix_per_cm
 
+    # left enclosure
     left_tl_corner = left_enclosure_tl
     left_tr_corner = left_enclosure_tr
     left_bl_corner = left_enclosure_bl
@@ -84,6 +149,7 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
                    left_trbr_mid, left_tltr_l_mid, left_tltr_r_mid, left_blbr_l_mid, left_blbr_r_mid, left_trbr_u_mid,
                    left_trbr_d_mid]
 
+    # right enclosure
     right_tl_corner = right_enclosure_tl
     right_tr_corner = right_enclosure_tr
     right_bl_corner = right_enclosure_bl
@@ -96,6 +162,7 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
                    right_tlbl_mid, right_tltr_l_mid, right_tltr_r_mid, right_lbr_l_mid, right_blbr_r_mid,
                    right_tlbl_u_mid, right_tlbl_d_mid]
 
+    # counters
     left_sniffle_counter = 0
     left_sniffle_frames = 0
     left_total_frames = 0
@@ -108,6 +175,10 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
     l_range = np.array([130, 100, 100])
     u_range = np.array([145, 255, 255])
 
+    # required amount of frames
+    req_frames = int(int(vid_fps.get()) * (int(interaction_time.get()) / 1000))
+
+    # go through each frame and update counters
     while True:
         ret, frame = capture.read()
         if frame is None:
@@ -118,7 +189,7 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
                                                                                   u_range, frame, l_enclosure,
                                                                                   interact_dist, left_total_frames,
                                                                                   left_sniffle_frames,
-                                                                                  left_sniffle_counter)
+                                                                                  left_sniffle_counter, req_frames)
         cvzone.putTextRect(frame, f'A1 Left Sniffle Counter: {left_sniffle_counter}', (25, 500), 1.5)
         cvzone.putTextRect(frame, f'A1 Left Sniffle Time: {left_total_frames / int(vid_fps.get())}s', (25, 540), 1.5)
         cvzone.putTextRect(frame, f'A1 Left Sniffle Frames: {left_total_frames}', (25, 580), 1.5)
@@ -129,7 +200,7 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
                                                                                      u_range, frame, r_enclosure,
                                                                                      interact_dist, right_total_frames,
                                                                                      right_sniffle_frames,
-                                                                                     right_sniffle_counter)
+                                                                                     right_sniffle_counter, req_frames)
 
         cvzone.putTextRect(frame, f'A2 Right Sniffle Counter: {right_sniffle_counter}', (425, 500), 1.5)
         cvzone.putTextRect(frame, f'A2 Right Sniffle Time: {right_total_frames / int(vid_fps.get())}s', (425, 540), 1.5)
@@ -141,8 +212,14 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
 
 
 def convert_frames_to_video(vid_fps):
+    """
+    A function that converts frames into a .mp4 video file.
+    :param vid_fps: The frames per second of the video
+    """
+    # ask for file path
     file_path = filedialog.askdirectory()
     pattern = os.path.join(file_path, '*.jpg')
+    # natural sort the files
     files = sorted(glob.glob(pattern),
                    key=lambda filename: [int(name) if name.isdigit() else name for name in re.split('(\d+)', filename)])
 
@@ -167,15 +244,42 @@ def convert_frames_to_video(vid_fps):
 def extract_test_frames_all(left_x_start, left_x_end, left_y_start, left_y_end, interaction_dist_cm, enclosure_len_pix,
                             enclosure_len_cm, vid_fps, left_enclosure_tl, left_enclosure_tr, left_enclosure_bl,
                             left_enclosure_br, right_x_start, right_x_end, right_y_start, right_y_end,
-                            right_enclosure_tl,
-                            right_enclosure_tr, right_enclosure_bl, right_enclosure_br):
+                            right_enclosure_tl, right_enclosure_tr, right_enclosure_bl, right_enclosure_br,
+                            interaction_time):
+    """
+    A function that analyzes all the live-video counting and puts them in a CSV for each animal
+    :param left_x_start: The left starting x position
+    :param left_x_end: The left ending x position
+    :param left_y_start: The left starting y position
+    :param left_y_end: The left ending y position
+    :param interaction_dist_cm: The interaction distance in centimeters
+    :param enclosure_len_pix: The enclosure length in pixel
+    :param enclosure_len_cm: The enclosure length in centimeters
+    :param vid_fps: The frames per second in the video
+    :param left_enclosure_tl: The top left corner of the left enclosure
+    :param left_enclosure_tr: The top right corner of the left enclosure
+    :param left_enclosure_bl: The bottom left corner of the left enclosure
+    :param left_enclosure_br: The bottom right corner of the left enclosure
+    :param right_x_start: The right starting x position
+    :param right_x_end: The right ending x position
+    :param right_y_start: The right starting y position
+    :param right_y_end: The right ending y position
+    :param right_enclosure_tl: The top left corner of the right enclosure
+    :param right_enclosure_tr: The top right corner of the right enclosure
+    :param right_enclosure_bl: The bottom left corner of the right enclosure
+    :param right_enclosure_br: The bottom right corner of the right enclosure
+    :param interaction_time: The interaction time required for a sniffle
+    """
+    # setting up file path
     file_path = filedialog.askdirectory()
     pattern = os.path.join(file_path, '*.mp4')
     files = glob.glob(pattern)
-    print(files)
+
+    # calculate interaction distance in pixels
     pix_per_cm = int(enclosure_len_pix.get()) / float(enclosure_len_cm.get())
     interact_dist = int(interaction_dist_cm.get()) * pix_per_cm
 
+    # left enclosure
     left_tl_corner = left_enclosure_tl
     left_tr_corner = left_enclosure_tr
     left_bl_corner = left_enclosure_bl
@@ -189,6 +293,7 @@ def extract_test_frames_all(left_x_start, left_x_end, left_y_start, left_y_end, 
                    left_trbr_mid, left_tltr_l_mid, left_tltr_r_mid, left_blbr_l_mid, left_blbr_r_mid, left_trbr_u_mid,
                    left_trbr_d_mid]
 
+    # right enclosure
     right_tl_corner = right_enclosure_tl
     right_tr_corner = right_enclosure_tr
     right_bl_corner = right_enclosure_bl
@@ -201,14 +306,15 @@ def extract_test_frames_all(left_x_start, left_x_end, left_y_start, left_y_end, 
                    right_tlbl_mid, right_tltr_l_mid, right_tltr_r_mid, right_lbr_l_mid, right_blbr_r_mid,
                    right_tlbl_u_mid, right_tlbl_d_mid]
 
-
-
     # purple range
     l_range = np.array([130, 100, 100])
     u_range = np.array([145, 255, 255])
 
+    req_frames = int(int(vid_fps.get()) * (int(interaction_time.get()) / 1000))
+
     mouse_dict = dict()
 
+    # iterate all the video files, update counters, and save to dictionary
     for index, file in enumerate(files):
         capture = cv.VideoCapture(filename=file)
         left_sniffle_counter = 0
@@ -229,7 +335,7 @@ def extract_test_frames_all(left_x_start, left_x_end, left_y_start, left_y_end, 
                                                                                       u_range, frame, l_enclosure,
                                                                                       interact_dist, left_total_frames,
                                                                                       left_sniffle_frames,
-                                                                                      left_sniffle_counter)
+                                                                                      left_sniffle_counter, req_frames)
             cvzone.putTextRect(frame, f'A1 Left Sniffle Counter: {left_sniffle_counter}', (25, 500), 1.5)
             cvzone.putTextRect(frame, f'A1 Left Sniffle Time: {left_total_frames / int(vid_fps.get())}s', (25, 540),
                                1.5)
@@ -242,7 +348,8 @@ def extract_test_frames_all(left_x_start, left_x_end, left_y_start, left_y_end, 
                                                                                          interact_dist,
                                                                                          right_total_frames,
                                                                                          right_sniffle_frames,
-                                                                                         right_sniffle_counter)
+                                                                                         right_sniffle_counter,
+                                                                                         req_frames)
 
             cvzone.putTextRect(frame, f'A2 Right Sniffle Counter: {right_sniffle_counter}', (425, 500), 1.5)
             cvzone.putTextRect(frame, f'A2 Right Sniffle Time: {right_total_frames / int(vid_fps.get())}s', (425, 540),
@@ -257,6 +364,7 @@ def extract_test_frames_all(left_x_start, left_x_end, left_y_start, left_y_end, 
                                                               right_total_frames]
         capture.release()
         cv.destroyAllWindows()
+    # convert the dictionary into a df and then into a CSV file
     social_interaction_df = pd.DataFrame.from_dict(mouse_dict, orient='index',
                                                    columns=['Total Sniffles', 'Total Sniffle Time',
                                                             'Total Sniffle Frames'])
@@ -265,6 +373,12 @@ def extract_test_frames_all(left_x_start, left_x_end, left_y_start, left_y_end, 
 
 
 def make_extraction_buttons(tk, root):
+    """
+    Creates all the buttons and UI for the extraction functionalities
+    :param tk:
+    :param root:
+    :return:
+    """
     left_x_start_label = tk.Label(root, text='Enter the starting x coordinate')
     left_x_start_entry = tk.Entry(root, width=30, justify='center')
     left_x_start_label.grid(row=0, column=0)
@@ -359,58 +473,63 @@ def make_extraction_buttons(tk, root):
     extraction_all_fps_entry = tk.Entry(root, width=30, justify='center')
     extraction_all_fps_entry.grid(row=19, column=1)
 
+    extraction_all_time_label = tk.Label(root, text='Enter the interaction time in ms:')
+    extraction_all_time_label.grid(row=20, column=0)
+    extraction_all_time_entry = tk.Entry(root, width=30, justify='center')
+    extraction_all_time_entry.grid(row=20, column=1)
+
     spacer_btn = tk.Label(root, text='')
-    spacer_btn.grid(row=20, column=0)
+    spacer_btn.grid(row=21, column=0)
 
     extraction_test_enclosure_left_tl_label = tk.Label(root, text='Enter left-enclosure top-left coordinates as (x,y):')
-    extraction_test_enclosure_left_tl_label.grid(row=21, column=0)
+    extraction_test_enclosure_left_tl_label.grid(row=22, column=0)
     extraction_test_enclosure_left_tl_entry = tk.Entry(root, width=30, justify='center')
-    extraction_test_enclosure_left_tl_entry.grid(row=21, column=1)
+    extraction_test_enclosure_left_tl_entry.grid(row=22, column=1)
 
     extraction_test_enclosure_left_tr_label = tk.Label(root,
                                                        text='Enter left-enclosure top-right coordinates as (x,y):')
-    extraction_test_enclosure_left_tr_label.grid(row=22, column=0)
+    extraction_test_enclosure_left_tr_label.grid(row=23, column=0)
     extraction_test_enclosure_left_tr_entry = tk.Entry(root, width=30, justify='center')
-    extraction_test_enclosure_left_tr_entry.grid(row=22, column=1)
+    extraction_test_enclosure_left_tr_entry.grid(row=23, column=1)
 
     extraction_test_enclosure_left_bl_label = tk.Label(root,
                                                        text='Enter left-enclosure bottom-left coordinates as (x,y):')
-    extraction_test_enclosure_left_bl_label.grid(row=23, column=0)
+    extraction_test_enclosure_left_bl_label.grid(row=24, column=0)
     extraction_test_enclosure_left_bl_entry = tk.Entry(root, width=30, justify='center')
-    extraction_test_enclosure_left_bl_entry.grid(row=23, column=1)
+    extraction_test_enclosure_left_bl_entry.grid(row=24, column=1)
 
     extraction_test_enclosure_left_br_label = tk.Label(root,
                                                        text='Enter left-enclosure bottom-right coordinates as (x,y):')
-    extraction_test_enclosure_left_br_label.grid(row=24, column=0)
+    extraction_test_enclosure_left_br_label.grid(row=25, column=0)
     extraction_test_enclosure_left_br_entry = tk.Entry(root, width=30, justify='center')
-    extraction_test_enclosure_left_br_entry.grid(row=24, column=1)
+    extraction_test_enclosure_left_br_entry.grid(row=25, column=1)
 
     spacer_btn = tk.Label(root, text='')
-    spacer_btn.grid(row=25, column=0)
+    spacer_btn.grid(row=26, column=0)
 
     extraction_test_enclosure_right_tl_label = tk.Label(root,
                                                         text='Enter right-enclosure top-left coordinates as (x,y):')
-    extraction_test_enclosure_right_tl_label.grid(row=26, column=0)
+    extraction_test_enclosure_right_tl_label.grid(row=27, column=0)
     extraction_test_enclosure_right_tl_entry = tk.Entry(root, width=30, justify='center')
-    extraction_test_enclosure_right_tl_entry.grid(row=26, column=1)
+    extraction_test_enclosure_right_tl_entry.grid(row=27, column=1)
 
     extraction_test_enclosure_right_tr_label = tk.Label(root,
                                                         text='Enter right-enclosure top-right coordinates as (x,y):')
-    extraction_test_enclosure_right_tr_label.grid(row=27, column=0)
+    extraction_test_enclosure_right_tr_label.grid(row=28, column=0)
     extraction_test_enclosure_right_tr_entry = tk.Entry(root, width=30, justify='center')
-    extraction_test_enclosure_right_tr_entry.grid(row=27, column=1)
+    extraction_test_enclosure_right_tr_entry.grid(row=28, column=1)
 
     extraction_test_enclosure_right_bl_label = tk.Label(root,
                                                         text='Enter right-enclosure bottom-left coordinates as (x,y):')
-    extraction_test_enclosure_right_bl_label.grid(row=28, column=0)
+    extraction_test_enclosure_right_bl_label.grid(row=29, column=0)
     extraction_test_enclosure_right_bl_entry = tk.Entry(root, width=30, justify='center')
-    extraction_test_enclosure_right_bl_entry.grid(row=28, column=1)
+    extraction_test_enclosure_right_bl_entry.grid(row=29, column=1)
 
     extraction_test_enclosure_right_br_label = tk.Label(root,
                                                         text='Enter right-enclosure bottom-right coordinates as (x,y):')
-    extraction_test_enclosure_right_br_label.grid(row=29, column=0)
+    extraction_test_enclosure_right_br_label.grid(row=30, column=0)
     extraction_test_enclosure_right_br_entry = tk.Entry(root, width=30, justify='center')
-    extraction_test_enclosure_right_br_entry.grid(row=29, column=1)
+    extraction_test_enclosure_right_br_entry.grid(row=30, column=1)
 
     extraction_test_all_btn = tk.Button(root, text='Extract Test Frames',
                                         command=lambda: extract_test_frames(left_x_start_all_entry,
@@ -440,12 +559,13 @@ def make_extraction_buttons(tk, root):
                                                                             literal_eval(
                                                                                 extraction_test_enclosure_right_bl_entry.get()),
                                                                             literal_eval(
-                                                                                extraction_test_enclosure_right_br_entry.get())
+                                                                                extraction_test_enclosure_right_br_entry.get()),
+                                                                            extraction_all_time_entry
                                                                             ))
-    extraction_test_all_btn.grid(row=30, column=0, columnspan=2)
+    extraction_test_all_btn.grid(row=31, column=0, columnspan=2)
     extraction_convert_img_to_vid_btn = tk.Button(root, text='Convert Images to Video',
                                                   command=lambda: convert_frames_to_video(extraction_all_fps_entry))
-    extraction_convert_img_to_vid_btn.grid(row=31, column=0, columnspan=2)
+    extraction_convert_img_to_vid_btn.grid(row=32, column=0, columnspan=2)
     extraction_extract_all_btn = tk.Button(root, text='Extract Test Frames All',
                                            command=lambda: extract_test_frames_all(left_x_start_all_entry,
                                                                                    left_x_end_all_entry,
@@ -474,7 +594,7 @@ def make_extraction_buttons(tk, root):
                                                                                    literal_eval(
                                                                                        extraction_test_enclosure_right_bl_entry.get()),
                                                                                    literal_eval(
-                                                                                       extraction_test_enclosure_right_br_entry.get())
+                                                                                       extraction_test_enclosure_right_br_entry.get()),
+                                                                                   extraction_all_time_entry
                                                                                    ))
-    extraction_extract_all_btn.grid(row=32, column=0, columnspan=2)
-
+    extraction_extract_all_btn.grid(row=33, column=0, columnspan=2)
