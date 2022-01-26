@@ -6,6 +6,9 @@ import cv2 as cv
 import os
 import re
 from ast import literal_eval
+
+import pandas as pd
+
 from social_interaction import make_midpoints
 import cvzone
 
@@ -159,6 +162,106 @@ def convert_frames_to_video(vid_fps):
         vid_writer.write(image_list[image])
 
     vid_writer.release()
+
+
+def extract_test_frames_all(left_x_start, left_x_end, left_y_start, left_y_end, interaction_dist_cm, enclosure_len_pix,
+                            enclosure_len_cm, vid_fps, left_enclosure_tl, left_enclosure_tr, left_enclosure_bl,
+                            left_enclosure_br, right_x_start, right_x_end, right_y_start, right_y_end,
+                            right_enclosure_tl,
+                            right_enclosure_tr, right_enclosure_bl, right_enclosure_br):
+    file_path = filedialog.askdirectory()
+    pattern = os.path.join(file_path, '*.mp4')
+    files = glob.glob(pattern)
+    print(files)
+    pix_per_cm = int(enclosure_len_pix.get()) / float(enclosure_len_cm.get())
+    interact_dist = int(interaction_dist_cm.get()) * pix_per_cm
+
+    left_tl_corner = left_enclosure_tl
+    left_tr_corner = left_enclosure_tr
+    left_bl_corner = left_enclosure_bl
+    left_br_corner = left_enclosure_br
+
+    left_tltr_mid, left_blbr_mid, left_trbr_mid, left_tltr_l_mid, left_tltr_r_mid, left_blbr_l_mid, left_blbr_r_mid, \
+    left_trbr_u_mid, left_trbr_d_mid = make_midpoints(left_tl_corner, left_tr_corner, left_bl_corner, left_br_corner,
+                                                      True)
+
+    l_enclosure = [left_tl_corner, left_tr_corner, left_bl_corner, left_br_corner, left_tltr_mid, left_blbr_mid,
+                   left_trbr_mid, left_tltr_l_mid, left_tltr_r_mid, left_blbr_l_mid, left_blbr_r_mid, left_trbr_u_mid,
+                   left_trbr_d_mid]
+
+    right_tl_corner = right_enclosure_tl
+    right_tr_corner = right_enclosure_tr
+    right_bl_corner = right_enclosure_bl
+    right_br_corner = right_enclosure_br
+
+    right_tltr_mid, right_blbr_mid, right_tlbl_mid, right_tltr_l_mid, right_tltr_r_mid, right_lbr_l_mid, right_blbr_r_mid, \
+    right_tlbl_u_mid, right_tlbl_d_mid = make_midpoints(right_tl_corner, right_tr_corner, right_bl_corner,
+                                                        right_br_corner, False)
+    r_enclosure = [right_tl_corner, right_tr_corner, right_bl_corner, right_br_corner, right_tltr_mid, right_blbr_mid,
+                   right_tlbl_mid, right_tltr_l_mid, right_tltr_r_mid, right_lbr_l_mid, right_blbr_r_mid,
+                   right_tlbl_u_mid, right_tlbl_d_mid]
+
+
+
+    # purple range
+    l_range = np.array([130, 100, 100])
+    u_range = np.array([145, 255, 255])
+
+    mouse_dict = dict()
+
+    for index, file in enumerate(files):
+        capture = cv.VideoCapture(filename=file)
+        left_sniffle_counter = 0
+        left_sniffle_frames = 0
+        left_total_frames = 0
+        right_sniffle_counter = 0
+        right_sniffle_frames = 0
+        right_total_frames = 0
+        frame_num = 0
+
+        while True:
+            ret, frame = capture.read()
+            if frame is None:
+                break
+
+            left_total_frames, left_sniffle_frames, left_sniffle_counter = update_ctr(left_x_start, left_x_end,
+                                                                                      left_y_start, left_y_end, l_range,
+                                                                                      u_range, frame, l_enclosure,
+                                                                                      interact_dist, left_total_frames,
+                                                                                      left_sniffle_frames,
+                                                                                      left_sniffle_counter)
+            cvzone.putTextRect(frame, f'A1 Left Sniffle Counter: {left_sniffle_counter}', (25, 500), 1.5)
+            cvzone.putTextRect(frame, f'A1 Left Sniffle Time: {left_total_frames / int(vid_fps.get())}s', (25, 540),
+                               1.5)
+            cvzone.putTextRect(frame, f'A1 Left Sniffle Frames: {left_total_frames}', (25, 580), 1.5)
+
+            right_total_frames, right_sniffle_frames, right_sniffle_counter = update_ctr(right_x_start, right_x_end,
+                                                                                         right_y_start, right_y_end,
+                                                                                         l_range,
+                                                                                         u_range, frame, r_enclosure,
+                                                                                         interact_dist,
+                                                                                         right_total_frames,
+                                                                                         right_sniffle_frames,
+                                                                                         right_sniffle_counter)
+
+            cvzone.putTextRect(frame, f'A2 Right Sniffle Counter: {right_sniffle_counter}', (425, 500), 1.5)
+            cvzone.putTextRect(frame, f'A2 Right Sniffle Time: {right_total_frames / int(vid_fps.get())}s', (425, 540),
+                               1.5)
+            cvzone.putTextRect(frame, f'A2 Right Sniffle Frames: {right_total_frames}', (425, 580), 1.5)
+            # cv.imwrite(f"{save_path}/frame-{frame_num}.jpg", frame)
+            frame_num += 1
+        mouse_dict['trial_' + str(index + 1) + '_mouse_1'] = [left_sniffle_counter,
+                                                              left_total_frames / int(vid_fps.get()), left_total_frames]
+        mouse_dict['trial_' + str(index + 1) + '_mouse_2'] = [right_sniffle_counter,
+                                                              right_total_frames / int(vid_fps.get()),
+                                                              right_total_frames]
+        capture.release()
+        cv.destroyAllWindows()
+    social_interaction_df = pd.DataFrame.from_dict(mouse_dict, orient='index',
+                                                   columns=['Total Sniffles', 'Total Sniffle Time',
+                                                            'Total Sniffle Frames'])
+    save_path = filedialog.asksaveasfilename(defaultextension='.csv', title='save the file')
+    social_interaction_df.to_csv(save_path)
 
 
 def make_extraction_buttons(tk, root):
@@ -343,3 +446,35 @@ def make_extraction_buttons(tk, root):
     extraction_convert_img_to_vid_btn = tk.Button(root, text='Convert Images to Video',
                                                   command=lambda: convert_frames_to_video(extraction_all_fps_entry))
     extraction_convert_img_to_vid_btn.grid(row=31, column=0, columnspan=2)
+    extraction_extract_all_btn = tk.Button(root, text='Extract Test Frames All',
+                                           command=lambda: extract_test_frames_all(left_x_start_all_entry,
+                                                                                   left_x_end_all_entry,
+                                                                                   left_y_start_all_entry,
+                                                                                   left_y_end_all_entry,
+                                                                                   extraction_all_interaction_dist_entry,
+                                                                                   extraction_all_enclosure_pixel_entry,
+                                                                                   extraction_all_enclosure_cm_entry,
+                                                                                   extraction_all_fps_entry,
+                                                                                   literal_eval(
+                                                                                       extraction_test_enclosure_left_tl_entry.get()),
+                                                                                   literal_eval(
+                                                                                       extraction_test_enclosure_left_tr_entry.get()),
+                                                                                   literal_eval(
+                                                                                       extraction_test_enclosure_left_bl_entry.get()),
+                                                                                   literal_eval(
+                                                                                       extraction_test_enclosure_left_br_entry.get()),
+                                                                                   right_x_start_all_entry,
+                                                                                   right_x_end_all_entry,
+                                                                                   right_y_start_all_entry,
+                                                                                   right_y_end_all_entry,
+                                                                                   literal_eval(
+                                                                                       extraction_test_enclosure_right_tl_entry.get()),
+                                                                                   literal_eval(
+                                                                                       extraction_test_enclosure_right_tr_entry.get()),
+                                                                                   literal_eval(
+                                                                                       extraction_test_enclosure_right_bl_entry.get()),
+                                                                                   literal_eval(
+                                                                                       extraction_test_enclosure_right_br_entry.get())
+                                                                                   ))
+    extraction_extract_all_btn.grid(row=32, column=0, columnspan=2)
+

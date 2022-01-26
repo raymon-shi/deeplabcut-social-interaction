@@ -6,20 +6,24 @@ import pandas as pd
 from ast import literal_eval
 
 
-def make_midpoints(top_left, top_right, bottom_left, bottom_right, is_left):
-    tltr_mid = (int((top_left[0] + bottom_right[0]) / 2), top_left[1])
-    blbr_mid = (int((bottom_left[0] + bottom_right[0]) / 2), bottom_left[1])
-    trbr_mid = (top_right[0], int((top_right[1] + bottom_right[1]) / 2))
-    tlbl_mid = (top_left[0], int((top_left[1] + bottom_left[1]) / 2))
+def avg(corner_one, corner_two):
+    return int((corner_one[0] + corner_two[0]) / 2), int((corner_one[1] + corner_two[1]) / 2)
 
-    tltr_l_mid = (int((tltr_mid[0] + top_left[0]) / 2), top_left[1])
-    tltr_r_mid = (int((tltr_mid[0] + top_right[0]) / 2), top_right[1])
-    blbr_l_mid = (int((blbr_mid[0] + bottom_left[0]) / 2), bottom_left[1])
-    blbr_r_mid = (int((blbr_mid[0] + bottom_right[0]) / 2), bottom_right[1])
-    trbr_u_mid = (top_right[0], int((top_right[1] + trbr_mid[1]) / 2))
-    trbr_d_mid = (bottom_right[0], int((bottom_right[1] + trbr_mid[1]) / 2))
-    tlbl_u_mid = (top_left[0], int((top_left[1] + tlbl_mid[1]) / 2))
-    tlbl_d_mid = (bottom_left[0], int((bottom_left[1] + tlbl_mid[1]) / 2))
+
+def make_midpoints(top_left, top_right, bottom_left, bottom_right, is_left):
+    tltr_mid = avg(top_left, top_right)
+    blbr_mid = avg(bottom_left, bottom_right)
+    trbr_mid = avg(top_right, bottom_right)
+    tlbl_mid = avg(top_left, bottom_left)
+
+    tltr_l_mid = avg(tltr_mid, top_left)
+    tltr_r_mid = avg(tltr_mid, top_right)
+    blbr_l_mid = avg(blbr_mid, bottom_left)
+    blbr_r_mid = avg(blbr_mid, bottom_right)
+    trbr_u_mid = avg(trbr_mid, top_right)
+    trbr_d_mid = avg(trbr_mid, bottom_right)
+    tlbl_u_mid = avg(tlbl_mid, top_left)
+    tlbl_d_mid = avg(tlbl_mid, bottom_left)
 
     if is_left:
         return tltr_mid, blbr_mid, trbr_mid, tltr_l_mid, tltr_r_mid, blbr_l_mid, blbr_r_mid, trbr_u_mid, trbr_d_mid
@@ -173,7 +177,7 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
                                                                                    left_total_sniffle_frames / video_fps,
                                                                                    left_total_sniffle_frames / left_total_frames * 100,
                                                                                    (
-                                                                                               left_total_sniffle_frames / video_fps) / trial_runtime_s * 100]
+                                                                                           left_total_sniffle_frames / video_fps) / trial_runtime_s * 100]
         mouse_entry_missed['trial_' + str(index + 1) + '_mouse_' + str(mouse_counter)] = [left_missed_sniffle_counter,
                                                                                           left_missed_total_sniffle_frames,
                                                                                           left_missed_total_sniffle_frames / video_fps,
