@@ -1,6 +1,8 @@
 # deeplabcut-social-interaction
 
-This is an application that cleans and wrangles the output from DeepLabCut and produces a CSV file containing information about rodent social interaction test. There is also a feature that allows for live video analysis of social interaction test. The application is adapted to the Eisch Lab's rodent social interaction protocol in which they perform a SI test on two mice within 1 trial (left and right mouse). 
+This is an application that cleans and wrangles the output from DeepLabCut and produces a CSV file containing information about rodent social interaction test. There is also a feature that allows for live video analysis of social interaction test and it can also produce a CSV file containing all the empirical information for each trial. The live video analysis feature provides a visual aid to help researchers see what is being considered sniffle bout. Additionally, the live video analysis results are highly correlated with the result given from DeepLabCut.
+
+This application is adapted to the Eisch Lab's rodent social interaction protocol in which they perform a SI test on two mice within 1 trial (left and right mouse). 
 
 The original model was trained on 200 frames that spanned across 4 videos. The model was trained for 200,000 iterations and has around a 95% accuracy.
 
@@ -52,6 +54,11 @@ and sniffle time in seconds.
 ```
 ### extract_frames.py
 ```
-This file extracts frames in the video to use as a reference and also produces a test video that shows live analysis 
-of social interaction results.
+This file extracts frames in the video to use as a reference and produces live video analysis of the social interaction
+test. Additionally, it can produce a CSV file that shows all the sniffle counts and sniffle time for all trials.
+```
+### interaction_zone.py
+```
+This file produces a CSV that contains information on mice activity within a designated interaction zone. This interaction
+zone is the area that's 9cm from the arena corners and 14 cm outward.
 ```
