@@ -1,4 +1,6 @@
 import math
+
+import cv2
 import numpy as np
 import glob
 import tkinter.filedialog as filedialog
@@ -98,10 +100,10 @@ def extract_one_frame(left_x_start, left_x_end, left_y_start, left_y_end):
                frame[int(left_y_start.get()):int(left_y_end.get()), int(left_x_start.get()):int(left_x_end.get())])
 
 
-def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, interaction_dist_cm, enclosure_len_pix,
-                        enclosure_len_cm, vid_fps, left_enclosure_tl, left_enclosure_tr, left_enclosure_bl,
-                        left_enclosure_br, right_x_start, right_x_end, right_y_start, right_y_end, right_enclosure_tl,
-                        right_enclosure_tr, right_enclosure_bl, right_enclosure_br, interaction_time):
+def create_live_video(left_x_start, left_x_end, left_y_start, left_y_end, interaction_dist_cm, enclosure_len_pix,
+                      enclosure_len_cm, vid_fps, left_enclosure_tl, left_enclosure_tr, left_enclosure_bl,
+                      left_enclosure_br, right_x_start, right_x_end, right_y_start, right_y_end, right_enclosure_tl,
+                      right_enclosure_tr, right_enclosure_bl, right_enclosure_br, interaction_time):
     """
     A function that analyzes each video, extracts all the frames, and stores the frames in another location
     :param left_x_start: The left starting x position
@@ -127,8 +129,12 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
     :param interaction_time: The interaction time required for a sniffle
     """
     # asking for directory path and save path
-    file_path = filedialog.askopenfilename()
-    capture = cv.VideoCapture(filename=file_path)
+    file_path = filedialog.askdirectory()
+    pattern = os.path.join(file_path, '*.mp4')
+    files = glob.glob(pattern)
+    # files = sorted(glob.glob(pattern),
+    #                key=lambda filename: [int(name) if name.isdigit() else name for name in re.split('(\d+)', filename)])
+
     save_path = filedialog.askdirectory()
 
     # calculate interaction in pixels
@@ -162,53 +168,72 @@ def extract_test_frames(left_x_start, left_x_end, left_y_start, left_y_end, inte
                    right_tlbl_mid, right_tltr_l_mid, right_tltr_r_mid, right_lbr_l_mid, right_blbr_r_mid,
                    right_tlbl_u_mid, right_tlbl_d_mid]
 
-    # counters
-    left_sniffle_counter = 0
-    left_sniffle_frames = 0
-    left_total_frames = 0
-    right_sniffle_counter = 0
-    right_sniffle_frames = 0
-    right_total_frames = 0
-    frame_num = 0
-
     # purple range
     l_range = np.array([130, 100, 100])
     u_range = np.array([145, 255, 255])
 
     # required amount of frames
     req_frames = int(int(vid_fps.get()) * (int(interaction_time.get()) / 1000))
-
-    # go through each frame and update counters
+    cap = cv.VideoCapture(filename=files[0])
     while True:
-        ret, frame = capture.read()
-        if frame is None:
-            break
+        ret, frame = cap.read()
+        h, w, l = frame.shape
+        size = (w, h)
+        break
+    cap.release()
 
-        left_total_frames, left_sniffle_frames, left_sniffle_counter = update_ctr(left_x_start, left_x_end,
-                                                                                  left_y_start, left_y_end, l_range,
-                                                                                  u_range, frame, l_enclosure,
-                                                                                  interact_dist, left_total_frames,
-                                                                                  left_sniffle_frames,
-                                                                                  left_sniffle_counter, req_frames)
-        cvzone.putTextRect(frame, f'A1 Left Sniffle Counter: {left_sniffle_counter}', (25, 500), 1.5)
-        cvzone.putTextRect(frame, f'A1 Left Sniffle Time: {left_total_frames / int(vid_fps.get())}s', (25, 540), 1.5)
-        cvzone.putTextRect(frame, f'A1 Left Sniffle Frames: {left_total_frames}', (25, 580), 1.5)
+    for index, file in enumerate(files):
+        # counters
+        left_sniffle_counter = 0
+        left_sniffle_frames = 0
+        left_total_frames = 0
+        right_sniffle_counter = 0
+        right_sniffle_frames = 0
+        right_total_frames = 0
+        frame_num = 0
 
-        right_total_frames, right_sniffle_frames, right_sniffle_counter = update_ctr(right_x_start, right_x_end,
-                                                                                     right_y_start, right_y_end,
-                                                                                     l_range,
-                                                                                     u_range, frame, r_enclosure,
-                                                                                     interact_dist, right_total_frames,
-                                                                                     right_sniffle_frames,
-                                                                                     right_sniffle_counter, req_frames)
+        capture = cv.VideoCapture(filename=file)
 
-        cvzone.putTextRect(frame, f'A2 Right Sniffle Counter: {right_sniffle_counter}', (425, 500), 1.5)
-        cvzone.putTextRect(frame, f'A2 Right Sniffle Time: {right_total_frames / int(vid_fps.get())}s', (425, 540), 1.5)
-        cvzone.putTextRect(frame, f'A2 Right Sniffle Frames: {right_total_frames}', (425, 580), 1.5)
-        cv.imwrite(f"{save_path}/frame-{frame_num}.jpg", frame)
-        frame_num += 1
-    capture.release()
-    cv.destroyAllWindows()
+        codec = cv.VideoWriter_fourcc(*'mp4v')
+        frame_rate = int(vid_fps.get())
+        video_out = cv2.VideoWriter(os.path.join(save_path, 'trial_' + str(index + 1) + '.mp4'), codec, frame_rate,
+                                    size)
+        # go through each frame and update counters
+        while True:
+            ret, frame = capture.read()
+            if frame is None:
+                break
+
+            left_total_frames, left_sniffle_frames, left_sniffle_counter = update_ctr(left_x_start, left_x_end,
+                                                                                      left_y_start, left_y_end, l_range,
+                                                                                      u_range, frame, l_enclosure,
+                                                                                      interact_dist, left_total_frames,
+                                                                                      left_sniffle_frames,
+                                                                                      left_sniffle_counter, req_frames)
+            cvzone.putTextRect(frame, f'A1 Left Sniffle Counter: {left_sniffle_counter}', (25, 500), 1.5)
+            cvzone.putTextRect(frame, f'A1 Left Sniffle Time: {left_total_frames / int(vid_fps.get())}s', (25, 540),
+                               1.5)
+            cvzone.putTextRect(frame, f'A1 Left Sniffle Frames: {left_total_frames}', (25, 580), 1.5)
+
+            right_total_frames, right_sniffle_frames, right_sniffle_counter = update_ctr(right_x_start, right_x_end,
+                                                                                         right_y_start, right_y_end,
+                                                                                         l_range,
+                                                                                         u_range, frame, r_enclosure,
+                                                                                         interact_dist,
+                                                                                         right_total_frames,
+                                                                                         right_sniffle_frames,
+                                                                                         right_sniffle_counter,
+                                                                                         req_frames)
+
+            cvzone.putTextRect(frame, f'A2 Right Sniffle Counter: {right_sniffle_counter}', (425, 500), 1.5)
+            cvzone.putTextRect(frame, f'A2 Right Sniffle Time: {right_total_frames / int(vid_fps.get())}s', (425, 540),
+                               1.5)
+            cvzone.putTextRect(frame, f'A2 Right Sniffle Frames: {right_total_frames}', (425, 580), 1.5)
+            frame_num += 1
+            video_out.write(frame)
+        video_out.release()
+        capture.release()
+        cv.destroyAllWindows()
 
 
 def convert_frames_to_video(vid_fps):
@@ -241,11 +266,11 @@ def convert_frames_to_video(vid_fps):
     vid_writer.release()
 
 
-def extract_test_frames_all(left_x_start, left_x_end, left_y_start, left_y_end, interaction_dist_cm, enclosure_len_pix,
-                            enclosure_len_cm, vid_fps, left_enclosure_tl, left_enclosure_tr, left_enclosure_bl,
-                            left_enclosure_br, right_x_start, right_x_end, right_y_start, right_y_end,
-                            right_enclosure_tl, right_enclosure_tr, right_enclosure_bl, right_enclosure_br,
-                            interaction_time):
+def create_live_video_csv(left_x_start, left_x_end, left_y_start, left_y_end, interaction_dist_cm, enclosure_len_pix,
+                          enclosure_len_cm, vid_fps, left_enclosure_tl, left_enclosure_tr, left_enclosure_bl,
+                          left_enclosure_br, right_x_start, right_x_end, right_y_start, right_y_end,
+                          right_enclosure_tl, right_enclosure_tr, right_enclosure_bl, right_enclosure_br,
+                          interaction_time):
     """
     A function that analyzes all the live-video counting and puts them in a CSV for each animal
     :param left_x_start: The left starting x position
@@ -399,7 +424,7 @@ def make_extraction_buttons(tk, root):
     left_y_end_label.grid(row=3, column=0)
     left_y_end_entry.grid(row=3, column=1)
 
-    extraction_one_btn = tk.Button(root, text='Extract First Frame',
+    extraction_one_btn = tk.Button(root, text='Extract Frame From Video',
                                    command=lambda: extract_one_frame(left_x_start_entry, left_x_end_entry,
                                                                      left_y_start_entry, left_y_end_entry))
     extraction_one_btn.grid(row=4, column=0, columnspan=2)
@@ -531,70 +556,67 @@ def make_extraction_buttons(tk, root):
     extraction_test_enclosure_right_br_entry = tk.Entry(root, width=30, justify='center')
     extraction_test_enclosure_right_br_entry.grid(row=30, column=1)
 
-    extraction_test_all_btn = tk.Button(root, text='Extract Test Frames',
-                                        command=lambda: extract_test_frames(left_x_start_all_entry,
-                                                                            left_x_end_all_entry,
-                                                                            left_y_start_all_entry,
-                                                                            left_y_end_all_entry,
-                                                                            extraction_all_interaction_dist_entry,
-                                                                            extraction_all_enclosure_pixel_entry,
-                                                                            extraction_all_enclosure_cm_entry,
-                                                                            extraction_all_fps_entry,
-                                                                            literal_eval(
-                                                                                extraction_test_enclosure_left_tl_entry.get()),
-                                                                            literal_eval(
-                                                                                extraction_test_enclosure_left_tr_entry.get()),
-                                                                            literal_eval(
-                                                                                extraction_test_enclosure_left_bl_entry.get()),
-                                                                            literal_eval(
-                                                                                extraction_test_enclosure_left_br_entry.get()),
-                                                                            right_x_start_all_entry,
-                                                                            right_x_end_all_entry,
-                                                                            right_y_start_all_entry,
-                                                                            right_y_end_all_entry,
-                                                                            literal_eval(
-                                                                                extraction_test_enclosure_right_tl_entry.get()),
-                                                                            literal_eval(
-                                                                                extraction_test_enclosure_right_tr_entry.get()),
-                                                                            literal_eval(
-                                                                                extraction_test_enclosure_right_bl_entry.get()),
-                                                                            literal_eval(
-                                                                                extraction_test_enclosure_right_br_entry.get()),
-                                                                            extraction_all_time_entry
-                                                                            ))
+    extraction_test_all_btn = tk.Button(root, text='Create Live Videos',
+                                        command=lambda: create_live_video(left_x_start_all_entry,
+                                                                          left_x_end_all_entry,
+                                                                          left_y_start_all_entry,
+                                                                          left_y_end_all_entry,
+                                                                          extraction_all_interaction_dist_entry,
+                                                                          extraction_all_enclosure_pixel_entry,
+                                                                          extraction_all_enclosure_cm_entry,
+                                                                          extraction_all_fps_entry,
+                                                                          literal_eval(
+                                                                              extraction_test_enclosure_left_tl_entry.get()),
+                                                                          literal_eval(
+                                                                              extraction_test_enclosure_left_tr_entry.get()),
+                                                                          literal_eval(
+                                                                              extraction_test_enclosure_left_bl_entry.get()),
+                                                                          literal_eval(
+                                                                              extraction_test_enclosure_left_br_entry.get()),
+                                                                          right_x_start_all_entry,
+                                                                          right_x_end_all_entry,
+                                                                          right_y_start_all_entry,
+                                                                          right_y_end_all_entry,
+                                                                          literal_eval(
+                                                                              extraction_test_enclosure_right_tl_entry.get()),
+                                                                          literal_eval(
+                                                                              extraction_test_enclosure_right_tr_entry.get()),
+                                                                          literal_eval(
+                                                                              extraction_test_enclosure_right_bl_entry.get()),
+                                                                          literal_eval(
+                                                                              extraction_test_enclosure_right_br_entry.get()),
+                                                                          extraction_all_time_entry
+                                                                          ))
     extraction_test_all_btn.grid(row=31, column=0, columnspan=2)
-    extraction_convert_img_to_vid_btn = tk.Button(root, text='Convert Images to Video',
-                                                  command=lambda: convert_frames_to_video(extraction_all_fps_entry))
-    extraction_convert_img_to_vid_btn.grid(row=32, column=0, columnspan=2)
-    extraction_extract_all_btn = tk.Button(root, text='Extract Test Frames All',
-                                           command=lambda: extract_test_frames_all(left_x_start_all_entry,
-                                                                                   left_x_end_all_entry,
-                                                                                   left_y_start_all_entry,
-                                                                                   left_y_end_all_entry,
-                                                                                   extraction_all_interaction_dist_entry,
-                                                                                   extraction_all_enclosure_pixel_entry,
-                                                                                   extraction_all_enclosure_cm_entry,
-                                                                                   extraction_all_fps_entry,
-                                                                                   literal_eval(
-                                                                                       extraction_test_enclosure_left_tl_entry.get()),
-                                                                                   literal_eval(
-                                                                                       extraction_test_enclosure_left_tr_entry.get()),
-                                                                                   literal_eval(
-                                                                                       extraction_test_enclosure_left_bl_entry.get()),
-                                                                                   literal_eval(
-                                                                                       extraction_test_enclosure_left_br_entry.get()),
-                                                                                   right_x_start_all_entry,
-                                                                                   right_x_end_all_entry,
-                                                                                   right_y_start_all_entry,
-                                                                                   right_y_end_all_entry,
-                                                                                   literal_eval(
-                                                                                       extraction_test_enclosure_right_tl_entry.get()),
-                                                                                   literal_eval(
-                                                                                       extraction_test_enclosure_right_tr_entry.get()),
-                                                                                   literal_eval(
-                                                                                       extraction_test_enclosure_right_bl_entry.get()),
-                                                                                   literal_eval(
-                                                                                       extraction_test_enclosure_right_br_entry.get()),
-                                                                                   extraction_all_time_entry
-                                                                                   ))
-    extraction_extract_all_btn.grid(row=33, column=0, columnspan=2)
+    extraction_extract_all_btn = tk.Button(root, text='Create Live Video Output CSV',
+                                           command=lambda: create_live_video_csv(left_x_start_all_entry,
+                                                                                 left_x_end_all_entry,
+                                                                                 left_y_start_all_entry,
+                                                                                 left_y_end_all_entry,
+                                                                                 extraction_all_interaction_dist_entry,
+                                                                                 extraction_all_enclosure_pixel_entry,
+                                                                                 extraction_all_enclosure_cm_entry,
+                                                                                 extraction_all_fps_entry,
+                                                                                 literal_eval(
+                                                                                     extraction_test_enclosure_left_tl_entry.get()),
+                                                                                 literal_eval(
+                                                                                     extraction_test_enclosure_left_tr_entry.get()),
+                                                                                 literal_eval(
+                                                                                     extraction_test_enclosure_left_bl_entry.get()),
+                                                                                 literal_eval(
+                                                                                     extraction_test_enclosure_left_br_entry.get()),
+                                                                                 right_x_start_all_entry,
+                                                                                 right_x_end_all_entry,
+                                                                                 right_y_start_all_entry,
+                                                                                 right_y_end_all_entry,
+                                                                                 literal_eval(
+                                                                                     extraction_test_enclosure_right_tl_entry.get()),
+                                                                                 literal_eval(
+                                                                                     extraction_test_enclosure_right_tr_entry.get()),
+                                                                                 literal_eval(
+                                                                                     extraction_test_enclosure_right_bl_entry.get()),
+                                                                                 literal_eval(
+                                                                                     extraction_test_enclosure_right_br_entry.get()),
+                                                                                 extraction_all_time_entry
+                                                                                 ))
+    extraction_extract_all_btn.grid(row=32, column=0, columnspan=2)

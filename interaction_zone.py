@@ -251,4 +251,4 @@ def make_interaction_zone_buttons(tk, root):
                                                            iz_left_arena_bottom_corner_entry,
                                                            iz_right_arena_top_corner_entry,
                                                            iz_right_arena_bottom_corner_entry))
-    iz_button.grid(row=10, column=0)
+    iz_button.grid(row=10, column=0, columnspan= 2)

@@ -46,7 +46,7 @@ def main_page_frame_buttons():
     social_interaction_btn = tk.Button(main_page_frame, text='Social Interaction',
                                        command=lambda: display_frame(social_interaction_frame))
     social_interaction_btn.grid(row=2, column=0)
-    extraction_btn = tk.Button(main_page_frame, text='Extraction / Manual Testing',
+    extraction_btn = tk.Button(main_page_frame, text='Extraction / Live Video Analysis',
                                command=lambda: display_frame(extraction_frame))
     extraction_btn.grid(row=3, column=0)
     interaction_zone_btn = tk.Button(main_page_frame, text='Interaction Zone Testing',
