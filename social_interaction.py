@@ -224,6 +224,13 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
                                                                                                        right_missed_sniffle_counter,
                                                                                                        required_frames_for_sniffle)
 
+        if left_sniffle_counter <= left_missed_sniffle_counter:
+            left_sniffle_counter = left_missed_sniffle_counter
+            left_total_sniffle_frames = left_missed_total_sniffle_frames
+        if right_sniffle_counter <= right_missed_sniffle_counter:
+            right_sniffle_counter = right_missed_sniffle_counter
+            right_total_sniffle_frames = right_missed_total_sniffle_frames
+
         # update information for each mouse
         mouse_entry['trial_' + str(index + 1) + '_mouse_' + str(mouse_counter)] = [left_sniffle_counter,
                                                                                    left_total_sniffle_frames,
@@ -231,12 +238,7 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
                                                                                    left_total_sniffle_frames / left_total_frames * 100,
                                                                                    (
                                                                                            left_total_sniffle_frames / video_fps) / trial_runtime_s * 100]
-        mouse_entry_missed['trial_' + str(index + 1) + '_mouse_' + str(mouse_counter)] = [left_missed_sniffle_counter,
-                                                                                          left_missed_total_sniffle_frames,
-                                                                                          left_missed_total_sniffle_frames / video_fps,
-                                                                                          left_missed_total_sniffle_frames / left_missed_total_frames * 100,
-                                                                                          (
-                                                                                                  left_missed_total_sniffle_frames / video_fps) / trial_runtime_s * 100]
+
         mouse_counter += 1
         mouse_entry['trial_' + str(index + 1) + '_mouse_' + str(mouse_counter)] = [right_sniffle_counter,
                                                                                    right_total_sniffle_frames,
@@ -244,34 +246,11 @@ def social_interaction(enclosure_conversion, left_enclosure_inputs, right_enclos
                                                                                    right_total_sniffle_frames / right_total_frames * 100,
                                                                                    (
                                                                                            right_total_sniffle_frames / video_fps) / trial_runtime_s * 100]
-        mouse_entry_missed['trial_' + str(index + 1) + '_mouse_' + str(mouse_counter)] = [right_missed_sniffle_counter,
-                                                                                          right_missed_total_sniffle_frames,
-                                                                                          right_missed_total_sniffle_frames / video_fps,
-                                                                                          right_missed_total_sniffle_frames / right_missed_total_frames * 100,
-                                                                                          (
-                                                                                                  right_missed_total_sniffle_frames / video_fps) / trial_runtime_s * 100]
 
     sniffle_df = pd.DataFrame.from_dict(mouse_entry, orient='index',
                                         columns=['Total Sniffles', 'Total Sniffle Frames',
                                                  'Total Sniffle Time in Seconds',
                                                  'Percentage of Sniffle Frames', 'Percentage of Sniffle Time'])
-
-    # filter out all the missed entries
-    sniffle_filtered_df = sniffle_df[(sniffle_df['Total Sniffles'] == 0) & (sniffle_df['Total Sniffle Frames'] == 0) & (
-            sniffle_df['Total Sniffle Time in Seconds'] == 0) & (
-                                             sniffle_df['Percentage of Sniffle Frames'] == 0) & (
-                                             sniffle_df['Percentage of Sniffle Time'] == 0)]
-    missed_entries = list(sniffle_filtered_df.index)
-
-    sniffle_missed_df = pd.DataFrame.from_dict(mouse_entry_missed, orient='index',
-                                               columns=['Total Sniffles', 'Total Sniffle Frames',
-                                                        'Total Sniffle Time in Seconds',
-                                                        'Percentage of Sniffle Frames', 'Percentage of Sniffle Time'])
-    sniffle_missed_series = sniffle_missed_df.index.isin(missed_entries)
-    sniffle_missed_df = sniffle_missed_df[sniffle_missed_series]
-
-    # update the missed entries with information
-    sniffle_df.update(sniffle_missed_df)
 
     # save to csv
     save_file_path = filedialog.asksaveasfilename(defaultextension='.csv', title='Save the file')
